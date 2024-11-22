@@ -16,7 +16,7 @@ Currently supports the Lear Siegler ADM-3A.
 TODO:  
 Hazeltine 1500  
 
-## QUICK START
+### QUICK START
 
 Load hiterm.ino in the Arduino IDE  
 Select your ESP8266 board in Boards Manager  
@@ -25,14 +25,17 @@ Use a TTL to RS232 converter to connect the ESP8266 to your terminal
 Set terminal to 19200 baud  
 Boot the ESP8266  
 
-hiterm> wifi:<SSID>:<PASSWORD>  
+```
+hiterm> wifi:SSID:PASSWORD  
+```
 
 Reset ESP8266  
 
-hiterm> tcp:telehack.com:23  
-.rain  
+```
+hiterm> tcp:telehack.com:23
+.rain
 
-Watch it rain.  
+^c
+.exit
+```
 
-^c  
-.exit  
