@@ -30,7 +30,7 @@ class Host {
 		void replay_rx_hist();
 		void show_tx_hist();
 
-		Client *client;
+		Client *client = nullptr;
 
 	private:
 		char g_tx_hist[TX_HIST_MAXLEN];

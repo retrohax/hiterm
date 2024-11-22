@@ -167,6 +167,7 @@ int process(String cmd_str) {
 
 void command() {
 	String cmd_str = "";
+	cmd_str.reserve(80);
 	Serial.printf("\r\n%s", CMD_PROMPT.c_str());
 	while (true) {
 		if (Serial.available()) {

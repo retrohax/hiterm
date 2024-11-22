@@ -7,7 +7,6 @@
 Host *g_host = new Host();
 
 Host :: Host() {
-	Client *client = nullptr;
 	g_tx_hist_index = 0;
 	g_rx_hist_index = 0;
 	for (int i=0; i<TX_HIST_MAXLEN; i++)

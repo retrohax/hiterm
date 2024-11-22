@@ -17,11 +17,11 @@ void setup() {
 
 	EEPROM.begin(g_host->RX_HIST_MAXLEN+1024);
 	if (EEPROM.read(EEPROM_FLAG_ADDR) != 1) {
-		set_serial_speed(1200);
+		set_serial_speed(19200);
 		write_eeprom(EEPROM_SYS1_ADDR, "");
 		write_eeprom(EEPROM_SYS2_ADDR, "");
-		write_eeprom(EEPROM_SYS3_ADDR, "");
-		write_eeprom(EEPROM_SYS4_ADDR, "OFF");
+		write_eeprom(EEPROM_SYS3_ADDR, "adm3a");
+		write_eeprom(EEPROM_SYS4_ADDR, "ON");
 		write_eeprom(EEPROM_USR1_ADDR, "");
 		write_eeprom(EEPROM_USR2_ADDR, "");
 		EEPROM.write(EEPROM_FLAG_ADDR, 1);
@@ -64,6 +64,7 @@ void setup() {
 	g_ansi_mode = read_eeprom(EEPROM_SYS4_ADDR);
 	Serial.printf("TERM=%s\r\n", g_term_type.c_str());
 	Serial.printf("ANSI=%s\r\n", g_ansi_mode.c_str());
+	init_terminal();
 
 	Serial.printf("\r\nType 'help' for commands\r\n");
 }

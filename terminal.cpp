@@ -610,7 +610,7 @@ void init_terminal() {
 	String term_type_uc = g_term_type;
 	term_type_uc.toUpperCase();
 	if (g_ansi_mode == "ON") {
-		g_telnet_term_type = 'vt100';
+		g_telnet_term_type = "vt100";
 		if (term_type_uc == "ADM3A")
 			g_terminal = new LSI_ADM3A();
 		else
