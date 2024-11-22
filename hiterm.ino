@@ -9,7 +9,7 @@
 #include "eeprom.h"
 #include "command.h"
 
-const String TITLE = "HITERM 1.0";
+const String TITLE = "HITERM 0.1.0";
 bool connected_to_host = false;
 
 void setup() {
