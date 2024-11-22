@@ -14,3 +14,5 @@ Some examples:
 
 Runs on ESP8266 devices such as NodeMCU which allows you to connect the terminal to wifi.  
 
+Currently supports the Lear Siegler ADM-3A.  
+I'd like to add the Hazeltine 1500 but I don't currently have one.  
