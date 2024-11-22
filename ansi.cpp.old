@@ -1,0 +1,401 @@
+#include <ctype.h>
+#include "ansi.h"
+#include "terminal.h"
+#include "server.h"
+#include "utility.h"
+
+String g_ansi_str = "";
+String g_last_ansi_str = "";
+String g_ansi_strings[ANSI_HIST_MAXLEN];
+int g_ansi_results[ANSI_HIST_MAXLEN];
+
+bool ansi_process_char(char c) {
+	bool is_ansi_char = false;
+	if (!(g_terminal->is_ansi_enabled()))
+		return is_ansi_char;
+	bool ansi_complete = false;
+	if (c == '\033')
+		g_ansi_str = String(c);
+	else {
+		if (g_ansi_str != "") {
+			g_ansi_str += String(c);
+			int str_len = g_ansi_str.length();
+			if (g_ansi_str.startsWith("\033") && str_len >= 2) {
+				char last_byte = g_ansi_str[str_len-1];
+				if (g_ansi_str[1] == '[') {
+					if (str_len >= 3 && last_byte >= '@' && last_byte <= '~') {
+						// must be a CSI function
+						ansi_complete = true;
+					}
+				} else if (str_len == 2) {
+					// must be a 2-byte control function
+					ansi_complete = true;
+				}
+			}
+		}
+	}
+	if (g_ansi_str != "") {
+		is_ansi_char = true;
+		if (ansi_complete) {
+			int result = send_ansi_to_terminal();
+			store_ansi_str(result, g_ansi_str);
+			g_last_ansi_str = g_ansi_str;
+			g_ansi_str = "";
+		} else if (g_ansi_str.length() >= ANSI_STR_MAXLEN) {
+			store_ansi_str(ANSI_SEQ_TOOLONG, g_ansi_str);
+			g_ansi_str = "";
+		}
+	}
+	return is_ansi_char;
+}
+
+int send_ansi_to_terminal() {
+	int ansi_seq_result = ANSI_SEQ_UNKNOWN;
+
+	if (!g_ansi_str.startsWith("\033"))
+		return ansi_seq_result;
+
+	String s = g_ansi_str;
+	int s_len = s.length();
+
+	if (s_len == 2) {
+
+		/*
+			2-BYTE CONTROL FUNCTIONS
+		*/
+
+		if (s == "\033D") {
+			// ESC D
+			// scroll up
+			g_terminal->move_down();
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033M") {
+			// ESC M
+			// scroll down
+			g_terminal->move_up();
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\0337") {
+			// ESC 7
+			// save cursor position (DEC)
+			g_terminal->save_cursor();
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\0338") {
+			// ESC 8
+			// restores the cursor to the last saved position (DEC)
+			g_terminal->restore_cursor();
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		}
+
+	} else if (s.startsWith("\033[")) {
+
+		/*
+			CSI FUNCTIONS
+		*/
+
+		// CURSOR CONTROL FUNCTIONS
+
+		if (s == "\033[A") {
+			// ESC [A
+			// moves cursor up 1 row
+			g_terminal->move_cursor(g_terminal->get_y()-1, g_terminal->get_x());
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'A') {
+			// ESC [#A
+			// moves cursor up # rows
+			int rows = s.substring(2, s_len-1).toInt();
+			g_terminal->move_cursor(g_terminal->get_y()-rows, g_terminal->get_x());
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[B") {
+			// ESC [B
+			// moves cursor down 1 row
+			g_terminal->move_cursor(g_terminal->get_y()+1, g_terminal->get_x());
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'B') {
+			// ESC [#B
+			// moves cursor down # rows
+			int rows = s.substring(2, s_len-1).toInt();
+			g_terminal->move_cursor(g_terminal->get_y()+rows, g_terminal->get_x());
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[C") {
+			// ESC [C
+			// moves cursor right 1 column
+			g_terminal->move_cursor(g_terminal->get_y(), g_terminal->get_x()+1);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'C') {
+			// ESC [#C
+			// moves cursor right # columns
+			int cols = s.substring(2, s_len-1).toInt();
+			g_terminal->move_cursor(g_terminal->get_y(), g_terminal->get_x()+cols);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[D") {
+			// ESC [D
+			// moves cursor left 1 column
+			g_terminal->move_cursor(g_terminal->get_y(), g_terminal->get_x()-1);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'D') {
+			// ESC [#D
+			// moves cursor left # columns
+			int cols = s.substring(2, s_len-1).toInt();
+			g_terminal->move_cursor(g_terminal->get_y(), g_terminal->get_x()-cols);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'E') {
+			// ESC [#E
+			// moves cursor to beginning of next row, # rows down
+			int rows = s.substring(2, s_len-1).toInt();
+			g_terminal->move_cursor(g_terminal->get_y()+rows, 0);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'F') {
+			// ESC [#F
+			// moves cursor to beginning of previous row, # rows up
+			int rows = s.substring(2, s_len-1).toInt();
+			g_terminal->move_cursor(g_terminal->get_y()-rows, 0);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'G') {
+			// ESC [#G
+			// moves cursor to column #
+			int x = s.substring(2, s_len-1).toInt() - 1;
+			g_terminal->move_cursor(g_terminal->get_y(), x);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[H") {
+			// ESC [H
+			// moves cursor to home position (0, 0)
+			g_terminal->home_cursor();
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if ((s[s_len-1] == 'H' || s[s_len-1] == 'f') && s.indexOf(';') >= 0) {
+			// ESC [{row};{col}H or ESC [{row};{col}]f
+			// moves cursor to line #, column #
+			String row_col = s.substring(2, s_len-1);
+			String parts[2];
+			int num_parts;
+			split_str(row_col, ';', parts, num_parts, 2);
+			int y = parts[0].toInt() - 1;
+			int x = parts[1].toInt() - 1;
+			g_terminal->move_cursor(y, x);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'S') {
+			// ESC [#S
+			// scroll window up by # rows
+			int rows = s.substring(2, s_len-1).toInt();	
+			g_terminal->scroll_up_rows(rows);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'T') {
+			// ESC [#T
+			// scroll window down by # rows
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[6n") {
+			// ESC [6n
+			// request cursor position (reports as ESC[#;#R)
+			// ANSI home is (1,1)
+			if (g_server && g_server->connected())
+				server_writef("\033[%d;%dR", g_terminal->get_y()+1, g_terminal->get_x()+1);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[s") {
+			// ESC [s
+			// save cursor position (SCO)
+			g_terminal->save_cursor();
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[u") {
+			// ESC [u
+			// restores the cursor to the last saved position (SCO)
+			g_terminal->restore_cursor();
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+
+		// ERASE FUNCTIONS
+
+		} else if (s == "\033[J" || s == "\033[0J") {
+			// ESC [J or ESC [0J
+			// erase from cursor until end of screen
+			g_terminal->clear_region(g_terminal->get_y(), g_terminal->get_x(), TERM_MAX_Y, TERM_MAX_X);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[1J") {
+			// ESC [1J
+			// erase from cursor to beginning of screen
+			g_terminal->clear_region(0, 0, g_terminal->get_y(), g_terminal->get_x());
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[2J") {
+			// ESC [2J
+			// erase entire screen
+			g_terminal->clear_region(0, 0, TERM_MAX_Y, TERM_MAX_X);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[3J") {
+			// ESC [3J
+			// erase saved lines
+			// not sure what this means, ignoring for now
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[K" || s == "\033[0K") {
+			// ESC [K or ESC [0K
+			// erase from cursor to end of line
+			g_terminal->clear_region(g_terminal->get_y(), g_terminal->get_x(), g_terminal->get_y(), TERM_MAX_X);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[1K") {
+			// ESC [1K
+			// erase start of line to the cursor
+			g_terminal->clear_region(g_terminal->get_y(), 0, g_terminal->get_y(), g_terminal->get_x());
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[2K") {
+			// ESC [2K
+			// erase the entire line
+			g_terminal->clear_region(g_terminal->get_y(), 0, g_terminal->get_y(), TERM_MAX_X);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+
+		// SET MODE
+
+		} else if (s == "\033[4h") {
+			// ESC [4h
+			g_terminal->set_mode(4);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[4l") {
+			// ESC [4l
+			g_terminal->reset_mode(4);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+
+		// COLORS / GRAPHICS MODE
+
+		} else if (s == "\033[m") {
+			// ESC [m
+			// reset all modes (styles and colors)
+			g_terminal->set_bold(false);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[0m") {
+			// ESC [0m
+			// reset all modes (styles and colors)
+			g_terminal->set_bold(false);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[1m") {
+			// ESC [1m
+			g_terminal->set_bold(true);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[2m") {
+			// ESC [2m
+			// dim
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[3m") {
+			// ESC [3m
+			// italic
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[4m") {
+			// ESC [4m
+			// underline
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[5m") {
+			// ESC [5m
+			// blinking
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[7m") {
+			// ESC [7m
+			// set inverse/reverse mode
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[8m") {
+			// ESC [8m
+			// set hidden/invisible mode
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[9m") {
+			// ESC [9m
+			// set strikethrough mode
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[22m") {
+			// ESC [22m
+			// reset bold/dim/italic
+			g_terminal->set_bold(false);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'm') {
+			// set graphics mode
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+
+		// SCREEN MODES
+
+		} else if (s == "\033[=7h") {
+			// ESC [=7h
+			// enable line wrapping
+			// ignored, we're always in line wrap mode
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s == "\033[=7l") {
+			// ESC [=7l
+			// disable line wrapping
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s.startsWith("\033[=") && s[s_len-1] == 'h') {
+			// ESC [={value}h
+			// set screen width or type
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+		} else if (s.startsWith("\033[=") && s[s_len-1] == 'l') {
+			// ESC [={value}l
+			// reset screen mode
+			ansi_seq_result = ANSI_SEQ_IGNORED;
+
+		// SCROLLING REGION
+
+		} else if (s[s_len-1] == 'r' && s.indexOf(';') >= 0) {
+			// ESC [{#};{#}r
+			// set scrolling region
+			String str = s.substring(2, s_len-1);
+			String parts[2];
+			int num_parts;
+			split_str(str, ';', parts, num_parts, 2);
+			// ANSI home is (1,1)
+			int top = parts[0].toInt() - 1;
+			int bot = parts[1].toInt() - 1;
+			g_terminal->scroll_set_region(top, bot);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'r' && isdigit(s[2])) {
+			// ESC [#r
+			// set scrolling region
+			// ANSI home is (1,1)
+			int top = s.substring(2, s_len-1).toInt() - 1;	
+			g_terminal->scroll_set_region(top, -1);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s[s_len-1] == 'r' && s.length() == 3) {
+			// ESC r
+			// turn off scrolling region
+			g_terminal->scroll_set_region(-1, -1);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[?6h") {
+			// ESC [?6h
+			// enable scrolling region
+			g_terminal->scroll_enable(true);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		} else if (s == "\033[?6l") {
+			// ESC [?6l
+			// disable scrolling region
+			g_terminal->scroll_enable(false);
+			ansi_seq_result = ANSI_SEQ_HANDLED;
+		}
+	}
+
+	return ansi_seq_result;
+}
+
+void ansi_init() {
+	for (int i=0; i<ANSI_HIST_MAXLEN; i++) {
+		g_ansi_strings[i] = "";
+		g_ansi_results[i] = 0;
+	}	
+}
+
+void store_ansi_str(int result, String ansi_str) {
+	String new_str = "ESC " + ansi_str.substring(1);
+	for (int i=0; i<ANSI_HIST_MAXLEN-1; i++) {
+		g_ansi_strings[i] = g_ansi_strings[i+1];
+		g_ansi_results[i] = g_ansi_results[i+1];
+		if (g_ansi_strings[i] == new_str) {
+			for (int j=i; j>0; j--) {
+				g_ansi_strings[j] = g_ansi_strings[j-1];
+				g_ansi_results[j] = g_ansi_results[j-1];
+			}
+			g_ansi_strings[0] = "";
+			g_ansi_results[0] = 0;
+		}
+	}
+	g_ansi_strings[ANSI_HIST_MAXLEN-1] = new_str;
+	g_ansi_results[ANSI_HIST_MAXLEN-1] = result;
+}
+
+void show_last_ansi_strings(int which) {
+	for (int i=0; i<ANSI_HIST_MAXLEN; i++) {
+		if (which >= 0 and g_ansi_results[i] != which)
+			continue;
+		Serial.printf("%d %s\r\n",
+				g_ansi_results[i],
+				g_ansi_strings[i].c_str());
+		yield();
+	}
+}
