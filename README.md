@@ -16,7 +16,7 @@ Currently supports the Lear Siegler ADM-3A.
 TODO:  
 Hazeltine 1500  
 
-## QUICK START:  
+## QUICK START
 
 Load hiterm.ino in the Arduino IDE  
 Select your ESP8266 board in Boards Manager  
