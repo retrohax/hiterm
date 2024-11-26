@@ -7,6 +7,11 @@ class Terminal {
 		Terminal(int rows=0, int cols=0);
 		virtual ~Terminal();
 
+		bool set_term_type(String term_type);
+		void show_term_type();
+		bool toggle_vt100_mode();
+		void show_vt100_mode();
+
 		void reset();
 		void event_reset();
 		bool available();
@@ -102,8 +107,6 @@ extern const int TERM_MAX_Y;
 extern const int TERM_MAX_X;
 extern String g_telnet_term_type;
 extern String g_term_type;
-extern String g_ansi_mode;
+extern bool g_vt100_mode;
 
-void set_term_type(String term_type);
-void set_ansi_mode(String ansi_mode);
 void init_terminal();

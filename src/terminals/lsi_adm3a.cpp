@@ -1,4 +1,4 @@
-#include "../../terminal.h"
+#include "../terminal.h"
 #include "lsi_adm3a.h"
 
 LSI_ADM3A::LSI_ADM3A() : Terminal(ROWS, COLS) {

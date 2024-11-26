@@ -151,7 +151,7 @@ void do_esc_mode(String cmd_str) {
 
 void parse_char(char c) {
 
-	if (g_ansi_mode != "ON") {
+	if (!g_vt100_mode) {
 		g_terminal->print(c);
 		return;
 	}

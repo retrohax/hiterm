@@ -1,8 +1,6 @@
 #pragma once
 #include <Arduino.h>
 
-extern bool g_debug_telnet;
-
 enum telnet_verbs {
 	IS = 0,
 	SEND = 1,

@@ -18,34 +18,32 @@ Host :: Host() {
 Host::~Host() {
 }
 
-void Host::tcp_connect(String host, int port) {
+void Host::connect(String host, int port, bool use_tls) {
 	if (client && client->connected())
-		Serial.println("ALREADY CONNECTED");
+		Serial.printf("Already connected.\r\n");
 	else {
-		Serial.printf("host=%s, port=%d\r\n", host.c_str(), port);
-		delete client;
-		client = new WiFiClient();
-		if (!client->connect(host.c_str(), port)) {
-			Serial.println("ERROR");
+		IPAddress ip;
+		if(WiFi.hostByName(host.c_str(), ip)) {
+			Serial.printf("Trying %s...\r\n", ip.toString().c_str());
 			delete client;
-			client = nullptr;
+			if (use_tls) {
+				WiFiClientSecure *client_tls = new WiFiClientSecure();
+				client_tls->setInsecure();
+				client = client_tls;
+			} else {
+				client = new WiFiClient();
+			}
+			if (client->connect(ip, port)) {
+				Serial.printf("Connected to %s.\r\n", host.c_str());
+				Serial.printf("Escape character is '^]'.\r\n");
+			} else {
+				Serial.printf("Could not connect to %s.\r\n", host.c_str());
+				delete client;
+				client = nullptr;
+			}
 		}
-	}
-}
-
-void Host::tls_connect(String host, int port) {
-	if (client && client->connected())
-		Serial.println("ALREADY CONNECTED");
-	else {
-		Serial.printf("host=%s, port=%d\r\n", host.c_str(), port);
-		delete client;
-		WiFiClientSecure *client_tls = new WiFiClientSecure();
-		client_tls->setInsecure();
-		client = client_tls;
-		if (!client->connect(host.c_str(), port)) {
-			Serial.println("ERROR");
-			delete client;
-			client = nullptr;
+		else {
+			Serial.printf("Could not resolve %s\r\n", host.c_str());
 		}
 	}
 }
@@ -108,6 +106,10 @@ void Host::write(char c) {
 	save_tx_char(c);
 }
 
+void Host::write_buffer(const char* data, int len) {
+	client->write((const uint8_t*)data, len);
+}
+
 void Host::writef(const char* format, ...) {
 	char buffer[256];
 	va_list args;
@@ -118,32 +120,31 @@ void Host::writef(const char* format, ...) {
 		write(buffer[i]);
 }
 
-void Host::set_local_echo(String str, bool quiet) {
-	str.toUpperCase();
-	if (str == "ON") {
-		local_echo = true;
-		if (!quiet) Serial.println("ECHO=ON");
-	} else if (str == "OFF") {
-		local_echo = false;
-		if (!quiet) Serial.println("ECHO=OFF");
-	} else {
-		if (!quiet) Serial.println("ERROR");
-	}
+void Host::show_local_echo() {
+	Serial.printf("Local echo is %s.\r\n", local_echo ? "on" : "off");	
+}
+
+void Host::set_local_echo(bool echo) {
+	local_echo = echo;
+}
+
+void Host::toggle_local_echo() {
+	local_echo = !local_echo;
 }
 
 void Host::set_flow_mode(int n) {
 	flow_mode = n;
 }
 
+void Host::show_crlf() {
+	if (line_end == "\r\n")
+		Serial.println("Carriage returns sent as telnet <CR><LF>.");
+	else
+		Serial.println("Carriage returns sent as telnet <CR><NUL>.");
+}
+
 void Host::toggle_crlf() {
-	if (line_end == "\r\n") {
-		line_end = "\r\0";
-		Serial.println("CRLF=<CR><NUL>");
-	}
-	else {
-		line_end = "\r\n";
-		Serial.println("CRLF=<CR><LF>");
-	}
+	line_end = (line_end == "\r\n") ? "\r\0" : "\r\n";
 }
 
 void Host::save_rx_char(char c) {

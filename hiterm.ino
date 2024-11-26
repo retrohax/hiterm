@@ -1,15 +1,14 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <EEPROM.h>
-#include "host.h"
-#include "telnet.h"
-#include "terminal.h"
-#include "parser.h"
-#include "utility.h"
-#include "eeprom.h"
-#include "command.h"
+#include "src/host.h"
+#include "src/telnet.h"
+#include "src/terminal.h"
+#include "src/parser.h"
+#include "src/eeprom.h"
+#include "src/command.h"
 
-const String TITLE = "HITERM 0.1.0";
+const String TITLE = "HITERM 0.1";
 bool connected_to_host = false;
 
 void setup() {
@@ -17,11 +16,11 @@ void setup() {
 
 	EEPROM.begin(g_host->RX_HIST_MAXLEN+1024);
 	if (EEPROM.read(EEPROM_FLAG_ADDR) != 1) {
-		set_serial_speed(19200);
+		write_eeprom(EEPROM_SERI_ADDR, String(19200));
 		write_eeprom(EEPROM_SYS1_ADDR, "");
 		write_eeprom(EEPROM_SYS2_ADDR, "");
-		write_eeprom(EEPROM_SYS3_ADDR, "adm3a");
-		write_eeprom(EEPROM_SYS4_ADDR, "ON");
+		write_eeprom(EEPROM_SYS3_ADDR, "");
+		write_eeprom(EEPROM_SYS4_ADDR, "OFF");
 		write_eeprom(EEPROM_USR1_ADDR, "");
 		write_eeprom(EEPROM_USR2_ADDR, "");
 		EEPROM.write(EEPROM_FLAG_ADDR, 1);
@@ -59,11 +58,12 @@ void setup() {
 		Serial.println("WIFI NOT CONNECTED");
 	}
 
-	Serial.println();
 	g_term_type = read_eeprom(EEPROM_SYS3_ADDR);
-	g_ansi_mode = read_eeprom(EEPROM_SYS4_ADDR);
-	Serial.printf("TERM=%s\r\n", g_term_type.c_str());
-	Serial.printf("ANSI=%s\r\n", g_ansi_mode.c_str());
+
+	g_vt100_mode = false;
+	if (read_eeprom(EEPROM_SYS4_ADDR) == "ON")
+		g_vt100_mode = true;
+
 	init_terminal();
 
 	Serial.printf("\r\nType 'help' for commands\r\n");
@@ -76,14 +76,12 @@ void loop() {
 		connected_to_host = true;
 		g_terminal->reset();
 		parser_init();
-		Serial.println("CONNECTED");
-		Serial.println();
 	}
 	if (!g_host->connected() && connected_to_host) {
 		connected_to_host = false;
 		g_host->shutdown();
 		Serial.println();
-		Serial.println("DISCONNECTED");
+		Serial.printf("\nConnection closed.\n");
 	}
 	if (g_terminal->available()) {
 		g_host->send(g_terminal->get());

@@ -1,6 +1,6 @@
 #include "terminal.h"
-#include "src/terminals/none.h"
-#include "src/terminals/lsi_adm3a.h"
+#include "terminals/none.h"
+#include "terminals/lsi_adm3a.h"
 #include "host.h"
 #include "command.h"
 #include "eeprom.h"
@@ -9,11 +9,15 @@ const int TERM_MAX_Y = std::numeric_limits<int>::max();
 const int TERM_MAX_X = std::numeric_limits<int>::max();
 const int SAVE_YX_MAXLEN = 100;
 
+// Each terminal listed here needs a corresponding entry
+// in init_terminal() or bad things will happen.
+String vt100_terminals = "|adm3a|";
+
 char dec_special_graphics(char c);
 
 String g_telnet_term_type = "";
 String g_term_type = "";
-String g_ansi_mode = "OFF";
+bool g_vt100_mode = false;
 
 Terminal *g_terminal = nullptr;
 
@@ -401,6 +405,10 @@ void Terminal::dec_shift_out(bool mode) {
 char Terminal::get() {
 	char c = Serial.read();
 	switch (c) {
+		case '\005':
+			// ^E (ECHO)
+			g_host->toggle_local_echo();
+			break;
 		case '\021':
 			// ^Q (XON)
 			g_host->set_flow_mode(1);
@@ -416,6 +424,9 @@ char Terminal::get() {
 			else
 				vt_send_ansi_mode = true;
 			break;
+		case '\034':
+			/* ^\ */
+			g_host->shutdown();
 		case '\035':
 			// ^]
 			command();
@@ -428,7 +439,7 @@ char Terminal::get() {
 }
 
 void Terminal::print(char c) {
-	if (g_ansi_mode == "ON")
+	if (g_vt100_mode)
 		vt_print(c);
 	else
 		rt_print(c);
@@ -565,6 +576,43 @@ void Terminal::show_vars() {
 		(vt_bold_mode) ? "true" : "false");
 }
 
+bool Terminal::set_term_type(String term_type) {
+	if (g_host->connected()) {
+		Serial.println("Close the connection first.");
+		return false;
+	}
+	g_term_type = term_type;
+	write_eeprom(EEPROM_SYS3_ADDR, g_term_type);
+	g_vt100_mode = (vt100_terminals.indexOf("|"+g_term_type+"|") >= 0);
+	write_eeprom(EEPROM_SYS4_ADDR, g_vt100_mode ? "ON" : "OFF");
+	return true;
+}
+
+void Terminal::show_term_type() {
+	Serial.printf("Terminal type is %s.\r\n", (g_term_type == "") ? "none" : g_term_type);
+}
+
+bool Terminal::toggle_vt100_mode() {
+	if (g_host->connected()) {
+		Serial.println("Close the connection first.");
+		return false;
+	}
+	if (!g_vt100_mode && vt100_terminals.indexOf("|"+g_term_type+"|") < 0) {
+		Serial.println("Invalid terminal type.");
+		return false;
+	}
+	g_vt100_mode = !g_vt100_mode;
+	write_eeprom(EEPROM_SYS4_ADDR, g_vt100_mode ? "ON" : "OFF");
+	return true;
+}
+
+void Terminal::show_vt100_mode() {
+	if (g_vt100_mode)
+		Serial.println("VT100 sequences will be handled by the terminal driver.");
+	else
+		Serial.println("VT100 sequences will be passed through to the terminal.");
+}
+
 char dec_special_graphics(char c) {
 	switch (c) {
 		case '\x6a': ;
@@ -582,43 +630,14 @@ char dec_special_graphics(char c) {
 	return '?';
 }
 
-void set_term_type(String term_type) {
-	String term_type_uc = term_type;
-	term_type_uc.toUpperCase();
-	if (term_type_uc == "ADM3A")
-		g_term_type = term_type;
-	else
-		g_term_type = "";
-	write_eeprom(EEPROM_SYS3_ADDR, g_term_type);
-	Serial.printf("TERM=%s\r\n", g_term_type.c_str());
-}
-
-void set_ansi_mode(String ansi_mode) {
-	ansi_mode.toUpperCase();
-	if (ansi_mode == "ON")
-		g_ansi_mode = "ON";
-	else
-		g_ansi_mode = "OFF";
-	write_eeprom(EEPROM_SYS4_ADDR, g_ansi_mode);
-	Serial.printf("ANSI=%s\r\n", g_ansi_mode.c_str());
-	init_terminal();
-}
-
 void init_terminal() {
 	if (g_terminal)
 		delete g_terminal;
-	String term_type_uc = g_term_type;
-	term_type_uc.toUpperCase();
-	if (g_ansi_mode == "ON") {
+	if (g_vt100_mode && vt100_terminals.indexOf("|"+g_term_type+"|") >= 0) {
 		g_telnet_term_type = "vt100";
-		if (term_type_uc == "ADM3A")
-			g_terminal = new LSI_ADM3A();
-		else
-			g_terminal = new NONE();
-	} else {
-		g_telnet_term_type = g_term_type;
-		if (term_type_uc == "" || term_type_uc == "NONE")
-			g_telnet_term_type = "";
-		g_terminal = new NONE();
+		if (g_term_type == "adm3a") g_terminal = new LSI_ADM3A();
+		return;
 	}
+	g_telnet_term_type = g_term_type;
+	g_terminal = new NONE();
 }

@@ -1,53 +1,30 @@
 #include "telnet.h"
 #include "host.h"
 #include "terminal.h"
-#include "utility.h"
 
-bool g_debug_telnet = false;
+static const int BUFFER_SIZE = 256;
+char g_buffer[BUFFER_SIZE];
+int g_buffer_pos = 0;
 
-bool g_telnet_reading = false;
-bool g_telnet_writing = false;
+void to_big_endian(uint16_t value, uint8_t* bytes) {
+	bytes[0] = (value >> 8) & 0xFF;
+	bytes[1] = value & 0xFF;
+}
 
 char telnet_read() {
-	char c = g_host->read();
-	if (g_debug_telnet) {
-		if (g_telnet_writing) {
-			Serial.print("\r\n");
-			g_telnet_writing = false;
-		}
-		if (!g_telnet_reading)
-			Serial.printf("< %d %d ", (char)telnet_verbs::IAC, c);
-		else
-			Serial.printf("%d ", c);
-		g_telnet_reading = true;
-	}
-	return c;
+	return g_host->read();
 }
 
-void telnet_write(char c, char debug='\0') {
-	if (debug == '\0')
-		g_host->write(c);
-	if (g_debug_telnet) {
-		if (g_telnet_reading) {
-			Serial.print("\r\n");
-			g_telnet_reading = false;
-		}
-		if (!g_telnet_writing)
-			Serial.printf("> %d ", c);
-		else
-			Serial.printf("%d ", c);
-		if (debug != '\0')
-			Serial.printf("%c ", debug);
-		g_telnet_writing = true;
+void telnet_write(char c) {
+	if (g_buffer_pos < BUFFER_SIZE) {
+		g_buffer[g_buffer_pos++] = c;
 	}
 }
 
-void telnet_end() {
-	if (g_debug_telnet) {
-		if (g_telnet_reading || g_telnet_writing)
-			Serial.print("\r\n");
-		g_telnet_reading = false;
-		g_telnet_writing = false;
+void telnet_flush() {
+	if (g_buffer_pos > 0) {
+		g_host->write_buffer(g_buffer, g_buffer_pos);
+		g_buffer_pos = 0;
 	}
 }
 
@@ -72,6 +49,7 @@ void telnet_verb_SB(char c) {
 					telnet_write(g_telnet_term_type[i]);
 				telnet_write((char)telnet_verbs::IAC);
 				telnet_write((char)telnet_verbs::SE);
+				telnet_flush();
 			}
 			break;
 		}
@@ -86,6 +64,7 @@ void telnet_verb_DO(char c) {
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::WILL);
 			telnet_write((char)telnet_options::SGA);
+			telnet_flush();
 			break;
 		}
 		case (char)telnet_options::TERM_TYPE: {
@@ -93,10 +72,12 @@ void telnet_verb_DO(char c) {
 				telnet_write((char)telnet_verbs::IAC);
 				telnet_write((char)telnet_verbs::WONT);
 				telnet_write((char)telnet_options::TERM_TYPE);
+				telnet_flush();
 			} else {
 				telnet_write((char)telnet_verbs::IAC);
 				telnet_write((char)telnet_verbs::WILL);
 				telnet_write((char)telnet_options::TERM_TYPE);
+				telnet_flush();
 			}
 			break;
 		}
@@ -105,6 +86,7 @@ void telnet_verb_DO(char c) {
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::WILL);
 			telnet_write((char)telnet_options::NAWS);
+			telnet_flush();
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::SB);
 			telnet_write((char)telnet_options::NAWS);
@@ -116,12 +98,14 @@ void telnet_verb_DO(char c) {
 			telnet_write((char)bytes[1]);
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::SE);
+			telnet_flush();
 			break;
 		}
 		default: {
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::WONT);
 			telnet_write(c);
+			telnet_flush();
 			break;
 		}
 	}
@@ -131,6 +115,7 @@ void telnet_verb_DONT(char c) {
 	telnet_write((char)telnet_verbs::IAC);
 	telnet_write((char)telnet_verbs::WONT);
 	telnet_write(c);
+	telnet_flush();
 }
 
 void telnet_verb_WILL(char c) {
@@ -139,19 +124,22 @@ void telnet_verb_WILL(char c) {
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::DO);
 			telnet_write((char)telnet_options::ECHO);
-			g_host->set_local_echo("off", true);
+			telnet_flush();
+			g_host->set_local_echo(false);
 			break;
 		}
 		case (char)telnet_options::SGA: {
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::DO);
 			telnet_write((char)telnet_options::SGA);
+			telnet_flush();
 			break;
 		}
 		default: {
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::DONT);
 			telnet_write(c);
+			telnet_flush();
 			break;
 		}
 	}
@@ -161,6 +149,7 @@ void telnet_verb_WONT(char c) {
 	telnet_write((char)telnet_verbs::IAC);
 	telnet_write((char)telnet_verbs::DONT);
 	telnet_write(c);
+	telnet_flush();
 }
 
 bool telnet_char(char c) {
@@ -170,7 +159,6 @@ bool telnet_char(char c) {
 	switch (verb) {
 		case (char)telnet_verbs::IAC: {
 			// IAC escape, pass IAC to terminal
-			telnet_end();
 			return false;
 		}
 		case (char)telnet_verbs::SB: {
@@ -203,12 +191,6 @@ bool telnet_char(char c) {
         	telnet_verb_WONT(option);
 			break;
 		}
-		default: {
-			telnet_write(verb, '?');
-			break;
-		}
 	}
-
-	telnet_end();
 	return true;
 }

@@ -1,4 +1,4 @@
-#include "../../terminal.h"
+#include "../terminal.h"
 #include "none.h"
 
 NONE::NONE() : Terminal() {}

@@ -1,20 +1,24 @@
 # HITERM
 
-Before the DEC VT100, there were "dumb" terminals such as the Lear Siegler ADM-3A.  
+HITERM is a telnet client for your Lear Siegler ADM-3A "dumb" terminal.  
 
-The ADM-3A could at least clear its screen and position the cursor. That, we can work with.  
+It runs on ESP8266 devices (NodeMCU, etc.) to connect the terminal to wifi.  
 
-HITERM runs on ESP8266 devices (like NodeMCU) to connect the terminal to wifi. Then you can telnet to a host and HITERM will do its best to translate vt100 commands to something the terminal can work with.  
+Once connected to a host, HITERM converts DEC VT100 commands to primitive commands understood by the terminal.  
+
+This allows your terminal to run a lot of programs intended to run on a VT100.  
 
 Some examples:  
-1) Play Dope Wars on sdf.org.  
-2) Play Inform/z-machine text adventure games.  
-3) Connect to IRC using irssi.  
+1) Dope Wars  
+2) Inform/z-machine text adventure games  
+3) irssi (IRC client)  
+4) other ncurses programs  
 
 Currently supports the Lear Siegler ADM-3A.  
 
 TODO:  
 Hazeltine 1500  
+
 
 ### QUICK START
 
