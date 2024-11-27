@@ -11,13 +11,13 @@ const int SAVE_YX_MAXLEN = 100;
 
 // Each terminal listed here needs a corresponding entry
 // in init_terminal() or bad things will happen.
-String vt100_terminals = "|adm3a|";
+String ansi_terminals = "|adm3a|";
 
 char dec_special_graphics(char c);
 
 String g_telnet_term_type = "";
 String g_term_type = "";
-bool g_vt100_mode = false;
+bool g_ansi_mode = false;
 
 Terminal *g_terminal = nullptr;
 
@@ -439,7 +439,7 @@ char Terminal::get() {
 }
 
 void Terminal::print(char c) {
-	if (g_vt100_mode)
+	if (g_ansi_mode)
 		vt_print(c);
 	else
 		rt_print(c);
@@ -583,8 +583,8 @@ bool Terminal::set_term_type(String term_type) {
 	}
 	g_term_type = term_type;
 	write_eeprom(EEPROM_SYS3_ADDR, g_term_type);
-	g_vt100_mode = (vt100_terminals.indexOf("|"+g_term_type+"|") >= 0);
-	write_eeprom(EEPROM_SYS4_ADDR, g_vt100_mode ? "ON" : "OFF");
+	g_ansi_mode = (ansi_terminals.indexOf("|"+g_term_type+"|") >= 0);
+	write_eeprom(EEPROM_SYS4_ADDR, g_ansi_mode ? "ON" : "OFF");
 	return true;
 }
 
@@ -592,25 +592,25 @@ void Terminal::show_term_type() {
 	Serial.printf("Terminal type is %s.\r\n", (g_term_type == "") ? "none" : g_term_type);
 }
 
-bool Terminal::toggle_vt100_mode() {
+bool Terminal::toggle_ansi_mode() {
 	if (g_host->connected()) {
 		Serial.println("Close the connection first.");
 		return false;
 	}
-	if (!g_vt100_mode && vt100_terminals.indexOf("|"+g_term_type+"|") < 0) {
+	if (!g_ansi_mode && ansi_terminals.indexOf("|"+g_term_type+"|") < 0) {
 		Serial.println("Invalid terminal type.");
 		return false;
 	}
-	g_vt100_mode = !g_vt100_mode;
-	write_eeprom(EEPROM_SYS4_ADDR, g_vt100_mode ? "ON" : "OFF");
+	g_ansi_mode = !g_ansi_mode;
+	write_eeprom(EEPROM_SYS4_ADDR, g_ansi_mode ? "ON" : "OFF");
 	return true;
 }
 
-void Terminal::show_vt100_mode() {
-	if (g_vt100_mode)
-		Serial.println("VT100 sequences will be handled by the terminal driver.");
+void Terminal::show_ansi_mode() {
+	if (g_ansi_mode)
+		Serial.println("ANSI sequences will be handled by the terminal driver.");
 	else
-		Serial.println("VT100 sequences will be passed through to the terminal.");
+		Serial.println("ANSI sequences will be passed through to your terminal.");
 }
 
 char dec_special_graphics(char c) {
@@ -633,7 +633,7 @@ char dec_special_graphics(char c) {
 void init_terminal() {
 	if (g_terminal)
 		delete g_terminal;
-	if (g_vt100_mode && vt100_terminals.indexOf("|"+g_term_type+"|") >= 0) {
+	if (g_ansi_mode && ansi_terminals.indexOf("|"+g_term_type+"|") >= 0) {
 		g_telnet_term_type = "vt100";
 		if (g_term_type == "adm3a") g_terminal = new LSI_ADM3A();
 		return;

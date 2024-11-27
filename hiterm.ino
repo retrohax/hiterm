@@ -16,7 +16,7 @@ void setup() {
 
 	EEPROM.begin(g_host->RX_HIST_MAXLEN+1024);
 	if (EEPROM.read(EEPROM_FLAG_ADDR) != 1) {
-		write_eeprom(EEPROM_SERI_ADDR, String(19200));
+		write_eeprom(EEPROM_SERI_ADDR, String(1200));
 		write_eeprom(EEPROM_SYS1_ADDR, "");
 		write_eeprom(EEPROM_SYS2_ADDR, "");
 		write_eeprom(EEPROM_SYS3_ADDR, "");
@@ -29,8 +29,8 @@ void setup() {
 		EEPROM.commit();
 	}
 
-	String serial_speed = read_eeprom(EEPROM_SERI_ADDR);
-	Serial.begin(serial_speed.toInt());
+	String baud_rate = read_eeprom(EEPROM_SERI_ADDR);
+	Serial.begin(baud_rate.toInt());
 	delay(500);
 	
 	Serial.printf("\r\n\r\n%s\r\n", TITLE.c_str());
@@ -60,9 +60,9 @@ void setup() {
 
 	g_term_type = read_eeprom(EEPROM_SYS3_ADDR);
 
-	g_vt100_mode = false;
+	g_ansi_mode = false;
 	if (read_eeprom(EEPROM_SYS4_ADDR) == "ON")
-		g_vt100_mode = true;
+		g_ansi_mode = true;
 
 	init_terminal();
 

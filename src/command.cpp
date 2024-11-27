@@ -31,7 +31,7 @@ void help_unset() {
 }
 
 void help_toggle() {
-	Serial.println("vt100           toggle VT100 mode");
+	Serial.println("ansi            toggle ansi mode");
 	Serial.println("crlf            toggle sending carriage returns as telnet <CR><LF>");
 	Serial.println("echo            toggle local echo");
 }
@@ -69,7 +69,7 @@ void wifi_config() {
 	Serial.println();
 	ssid = ssid.substring(0, EEPROM_FIELD_MAXLEN);
 	Serial.print("Passphrase: ");
-	String passphrase = readLineWithEcho(false);
+	String passphrase = readLineWithEcho();
 	Serial.println();
 	passphrase = passphrase.substring(0, EEPROM_FIELD_MAXLEN);
 	write_eeprom(EEPROM_SYS1_ADDR, ssid);
@@ -110,7 +110,7 @@ int set(String key, String val) {
 	if (key == "TERM") {
 		if (g_terminal->set_term_type(val)) {
 			g_terminal->show_term_type();
-			g_terminal->show_vt100_mode();
+			g_terminal->show_ansi_mode();
 			init_terminal();
 		}
 		return 1;
@@ -146,9 +146,9 @@ int toggle(String key) {
 		help_toggle();
 		return 1;
 	}
-	if (key == "VT100") {
-		if (g_terminal->toggle_vt100_mode()) {
-			g_terminal->show_vt100_mode();
+	if (key == "ANSI") {
+		if (g_terminal->toggle_ansi_mode()) {
+			g_terminal->show_ansi_mode();
 			init_terminal();
 		}
 		return 1;
@@ -174,7 +174,7 @@ void display() {
 	Serial.println("stop            [^S]");
 	Serial.println();
 	g_terminal->show_term_type();
-	g_terminal->show_vt100_mode();
+	g_terminal->show_ansi_mode();
 	g_host->show_crlf();
 	g_host->show_local_echo();
 	show_serial_baud_rate();

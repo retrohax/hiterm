@@ -1,23 +1,12 @@
 # HITERM
 
-HITERM is a telnet client for your Lear Siegler ADM-3A "dumb" terminal.  
+HITERM is a telnet client for your serial terminal.
 
 It runs on ESP8266 devices (NodeMCU, etc.) to connect the terminal to wifi.  
 
-Once connected to a host, HITERM converts DEC VT100 commands to primitive commands understood by the terminal.  
+If you happen to be using a Lear Siegler ADM-3A "dumb" terminal, HITERM can convert ANSI sequences to the primitive cursor control commands understood by the terminal. This allows your terminal to run a lot of programs it otherwise would not be able to. For example, Dope Wars on sdf.org, z-machine based text adventures, irssi (IRC) and many other ncurses programs.  
 
-This allows your terminal to run a lot of programs intended to run on a VT100.  
-
-Some examples:  
-1) Dope Wars  
-2) Inform/z-machine text adventure games  
-3) irssi (IRC client)  
-4) other ncurses programs  
-
-Currently supports the Lear Siegler ADM-3A.  
-
-TODO:  
-Hazeltine 1500  
+If I ever find a Soroc IQ-120, I'd like to add the ANSI support to it as well.  
 
 
 ### QUICK START
@@ -26,20 +15,27 @@ Load hiterm.ino in the Arduino IDE
 Select your ESP8266 board in Boards Manager  
 Compile and upload to your board  
 Use a TTL to RS232 converter to connect the ESP8266 to your terminal  
-Set terminal to 19200 baud  
+Set terminal to 1200 baud  
 Boot the ESP8266  
 
 ```
-hiterm> wifi:SSID:PASSWORD  
+hiterm> wifi
+hiterm> restart
+hiterm> open telehack.com
 ```
 
-Reset ESP8266  
+#### Recommended
 
+Change the baud rate to the fastest setting supported by your terminal:  
 ```
-hiterm> tcp:telehack.com:23
-.rain
-
-^c
-.exit
+hiterm> set baud 19200
 ```
 
+Set your terminal to use the same baud rate and then reset the ESP8266.  
+
+
+#### Note
+
+The TTL to RS232 module is cheap on Amazon, just look for one with a DB9 connecter and six serial pins.  
+
+Plug the serial cable from your terminal into the DB9 connecter (get a DB25 to DB9 adapter if you need one) and then connect VCC, GND, TXD, RXD pins to your ESP8266 board (TXD -> RXD, RXD -> TXD) and you're all set.  
