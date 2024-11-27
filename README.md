@@ -21,6 +21,7 @@ Boot the ESP8266
 ```
 hiterm> wifi
 hiterm> restart
+hiterm> set term adm3a (or whatever your terminal is)
 hiterm> open telehack.com
 ```
 
@@ -34,8 +35,7 @@ hiterm> set baud 19200
 Set your terminal to use the same baud rate and then reset the ESP8266.  
 
 
-#### Note
+#### Notes
 
-The TTL to RS232 module is cheap on Amazon, just look for one with a DB9 connecter and six serial pins.  
-
-Plug the serial cable from your terminal into the DB9 connecter (get a DB25 to DB9 adapter if you need one) and then connect VCC, GND, TXD, RXD pins to your ESP8266 board (TXD -> RXD, RXD -> TXD) and you're all set.  
+ * The TTL to RS232 module is cheap on Amazon, just look for one with a DB9 connecter and six serial pins. Plug the serial cable from your terminal into the DB9 connecter (get a DB25 to DB9 adapter if you need one) and then connect VCC, GND, TXD, RXD pins to your ESP8266 board (TXD -> RXD, RXD -> TXD) and you're all set.
+ * Make sure the terminal you specify in the "set term" command is found in the TERMINFO database because HITERM will send this name to the host you are connecting to using the telnet protocol. You can verify you have the correct name using the *infocmp* command on Linux, for example: *infocmp adm3a*
