@@ -1,7 +1,7 @@
 #include "../terminal.h"
 #include "lsi_adm3a.h"
 
-LSI_ADM3A::LSI_ADM3A() : Terminal(ROWS, COLS) {
+LSI_ADM3A::LSI_ADM3A(const char* term_type) : Terminal(term_type, true, ROWS, COLS) {
 	rt = new char *[ROWS];
 	for (int i=0; i<ROWS; i++)
 		rt[i] = new char[COLS];

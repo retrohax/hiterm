@@ -2,7 +2,7 @@
 
 class LSI_ADM3A : public Terminal {
 	public:
-		LSI_ADM3A();
+		LSI_ADM3A(const char* term_type);
 		virtual ~LSI_ADM3A();
 
 	protected:

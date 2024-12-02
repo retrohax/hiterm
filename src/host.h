@@ -27,6 +27,7 @@ class Host {
 		void toggle_local_echo();
 		void set_flow_mode(int flow_mode);
 		void show_crlf();
+		void show_status();
 		void toggle_crlf();
 		void show_rx_hist(String find_str="");
 		void save_rx_hist();
@@ -36,14 +37,15 @@ class Host {
 		Client *client = nullptr;
 
 	private:
+		String host_name = "";
+		String line_end = "\r\n";
+		bool local_echo = false;
+		int flow_mode = 1;
+
 		char g_tx_hist[TX_HIST_MAXLEN];
 		char g_rx_hist[RX_HIST_MAXLEN];
 		int g_tx_hist_index;
 		int g_rx_hist_index;
-
-		String line_end = "\r\n";
-		bool local_echo = false;
-		int flow_mode = 1;
 
 		void save_rx_char(char c);
 		void save_tx_char(char c);

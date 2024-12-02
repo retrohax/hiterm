@@ -13,19 +13,16 @@ bool connected_to_host = false;
 
 void setup() {
 	pinMode(LED_BUILTIN, OUTPUT);
+	digitalWrite(LED_BUILTIN, LOW);
 
-	EEPROM.begin(g_host->RX_HIST_MAXLEN+1024);
+	EEPROM.begin(EEPROM_LEN);
 	if (EEPROM.read(EEPROM_FLAG_ADDR) != 1) {
 		write_eeprom(EEPROM_SERI_ADDR, String(1200));
 		write_eeprom(EEPROM_SYS1_ADDR, "");
 		write_eeprom(EEPROM_SYS2_ADDR, "");
-		write_eeprom(EEPROM_SYS3_ADDR, "");
-		write_eeprom(EEPROM_SYS4_ADDR, "OFF");
 		write_eeprom(EEPROM_USR1_ADDR, "");
 		write_eeprom(EEPROM_USR2_ADDR, "");
 		EEPROM.write(EEPROM_FLAG_ADDR, 1);
-		for (int i=0; i<g_host->RX_HIST_MAXLEN; i++)
-			EEPROM.write(EEPROM_RX_DATA_ADDR+i, '\0');
 		EEPROM.commit();
 	}
 
@@ -57,12 +54,6 @@ void setup() {
 	} else {
 		Serial.println("WIFI NOT CONNECTED");
 	}
-
-	g_term_type = read_eeprom(EEPROM_SYS3_ADDR);
-
-	g_ansi_mode = false;
-	if (read_eeprom(EEPROM_SYS4_ADDR) == "ON")
-		g_ansi_mode = true;
 
 	init_terminal();
 

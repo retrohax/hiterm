@@ -4,13 +4,12 @@
 
 class Terminal {
 	public:
-		Terminal(int rows=0, int cols=0);
+		Terminal(String term_type="", bool ansi_mode=false, int rows=24, int cols=80);
 		virtual ~Terminal();
 
-		bool set_term_type(String term_type);
 		void show_term_type();
-		bool toggle_ansi_mode();
-		void show_ansi_mode();
+		String get_telnet_term_type();
+		bool get_ansi_mode();
 
 		void reset();
 		void event_reset();
@@ -94,6 +93,10 @@ class Terminal {
 		bool vt_save_origin_mode;
 		bool vt_save_bold_mode;
 
+		String vt_telnet_term_type;
+		String vt_term_type;
+		bool vt_ansi_mode;
+
 		void vt_print(char c);
 		void vt_home_cursor();
 		void vt_update_cursor(int y, int x);
@@ -105,8 +108,5 @@ class Terminal {
 extern Terminal *g_terminal;
 extern const int TERM_MAX_Y;
 extern const int TERM_MAX_X;
-extern String g_telnet_term_type;
-extern String g_term_type;
-extern bool g_ansi_mode;
 
-void init_terminal();
+bool init_terminal(String term_type="");

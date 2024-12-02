@@ -22,8 +22,9 @@ void Host::connect(String host, int port, bool use_tls) {
 	if (client && client->connected())
 		Serial.printf("Already connected.\r\n");
 	else {
+		host_name = host;
 		IPAddress ip;
-		if(WiFi.hostByName(host.c_str(), ip)) {
+		if(WiFi.hostByName(host_name.c_str(), ip)) {
 			Serial.printf("Trying %s...\r\n", ip.toString().c_str());
 			delete client;
 			if (use_tls) {
@@ -34,16 +35,16 @@ void Host::connect(String host, int port, bool use_tls) {
 				client = new WiFiClient();
 			}
 			if (client->connect(ip, port)) {
-				Serial.printf("Connected to %s.\r\n", host.c_str());
+				Serial.printf("Connected to %s.\r\n", host_name.c_str());
 				Serial.printf("Escape character is '^]'.\r\n");
 			} else {
-				Serial.printf("Could not connect to %s.\r\n", host.c_str());
+				Serial.printf("Could not connect to %s.\r\n", host_name.c_str());
 				delete client;
 				client = nullptr;
 			}
 		}
 		else {
-			Serial.printf("Could not resolve %s\r\n", host.c_str());
+			Serial.printf("Could not resolve %s\r\n", host_name.c_str());
 		}
 	}
 }
@@ -143,6 +144,18 @@ void Host::show_crlf() {
 		Serial.println("Carriage returns sent as telnet <CR><NUL>.");
 }
 
+void Host::show_status() {
+	if (connected()) {
+		Serial.printf("Connected to %s.\r\n", host_name.c_str());
+		show_local_echo();
+		show_crlf();
+		Serial.printf("Escape character is '^]'.\r\n");
+	} else {
+		Serial.printf("No connection.\r\n");
+		Serial.printf("Escape character is '^]'.\r\n");
+	}
+}
+
 void Host::toggle_crlf() {
 	line_end = (line_end == "\r\n") ? "\r\0" : "\r\n";
 }
@@ -173,27 +186,6 @@ void Host::show_rx_hist(String find_str) {
 		yield();
 	}
 	Serial.println();
-}
-
-void Host::save_rx_hist() {
-	for (int i=0; i<RX_HIST_MAXLEN; i++) {
-		g_rx_hist_index++;
-		if (g_rx_hist_index > RX_HIST_MAXLEN-1)
-			g_rx_hist_index = 0;
-		EEPROM.write(EEPROM_RX_DATA_ADDR+i, g_rx_hist[g_rx_hist_index]);
-	}
-	EEPROM.commit();
-}
-
-void Host::replay_rx_hist() {
-	char c;
-	Serial.printf("\032");
-	for (int i=0; i<RX_HIST_MAXLEN; i++) {
-		c = EEPROM.read(EEPROM_RX_DATA_ADDR+i);
-		if (c != '\0')
-			Serial.printf("%c", c);
-		yield();
-	}
 }
 
 void Host::show_tx_hist() {

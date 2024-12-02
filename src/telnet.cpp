@@ -21,6 +21,11 @@ void telnet_write(char c) {
 	}
 }
 
+void telnet_write_str(String str) {
+	for (int i=0; i < str.length(); i++)
+		telnet_write(str[i]);
+}
+
 void telnet_flush() {
 	if (g_buffer_pos > 0) {
 		g_host->write_buffer(g_buffer, g_buffer_pos);
@@ -31,7 +36,7 @@ void telnet_flush() {
 void telnet_verb_SB(char c) {
 	switch (c) {
 		case (char)telnet_options::TERM_TYPE: {
-			if (g_telnet_term_type == "") break;
+			if (g_terminal->get_telnet_term_type() == "") break;
 			if (!(g_host->available())) break;
 			char sb_verb1 = telnet_read();
 			if (!(g_host->available())) break;
@@ -45,8 +50,7 @@ void telnet_verb_SB(char c) {
 				telnet_write((char)telnet_verbs::SB);
 				telnet_write((char)telnet_options::TERM_TYPE);
 				telnet_write((char)telnet_verbs::IS);
-				for (int i=0; g_telnet_term_type[i]!='\0'; i++)
-					telnet_write(g_telnet_term_type[i]);
+				telnet_write_str(g_terminal->get_telnet_term_type());
 				telnet_write((char)telnet_verbs::IAC);
 				telnet_write((char)telnet_verbs::SE);
 				telnet_flush();
@@ -68,7 +72,7 @@ void telnet_verb_DO(char c) {
 			break;
 		}
 		case (char)telnet_options::TERM_TYPE: {
-			if (g_telnet_term_type == "") {
+			if (g_terminal->get_telnet_term_type() == "") {
 				telnet_write((char)telnet_verbs::IAC);
 				telnet_write((char)telnet_verbs::WONT);
 				telnet_write((char)telnet_options::TERM_TYPE);

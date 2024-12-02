@@ -9,19 +9,14 @@ const int TERM_MAX_Y = std::numeric_limits<int>::max();
 const int TERM_MAX_X = std::numeric_limits<int>::max();
 const int SAVE_YX_MAXLEN = 100;
 
-// Each terminal listed here needs a corresponding entry
-// in init_terminal() or bad things will happen.
-String ansi_terminals = "|adm3a|";
-
 char dec_special_graphics(char c);
-
-String g_telnet_term_type = "";
-String g_term_type = "";
-bool g_ansi_mode = false;
 
 Terminal *g_terminal = nullptr;
 
-Terminal::Terminal(int rows, int cols) {
+Terminal::Terminal(String term_type, bool ansi_mode, int rows, int cols) {
+	vt_telnet_term_type = ansi_mode ? "vt100" : term_type;
+	vt_term_type = term_type;
+	vt_ansi_mode = ansi_mode;
 	vt_rows = rows;
 	vt_cols = cols;
 	vt = new char *[vt_rows];
@@ -65,7 +60,7 @@ void Terminal::event_reset() {
 }
 
 bool Terminal::available() {
-	return (Serial.available()) ? true : false;
+	return Serial.available();
 }
 
 /*
@@ -439,7 +434,7 @@ char Terminal::get() {
 }
 
 void Terminal::print(char c) {
-	if (g_ansi_mode)
+	if (vt_ansi_mode)
 		vt_print(c);
 	else
 		rt_print(c);
@@ -541,6 +536,14 @@ uint16_t Terminal::get_cols() {
 	return vt_cols;
 }
 
+String Terminal::get_telnet_term_type() {
+	return vt_telnet_term_type;
+}
+
+bool Terminal::get_ansi_mode() {
+	return vt_ansi_mode;
+}
+
 void Terminal::show() {
 	Serial.printf("\032");
 	delay(100);
@@ -576,41 +579,9 @@ void Terminal::show_vars() {
 		(vt_bold_mode) ? "true" : "false");
 }
 
-bool Terminal::set_term_type(String term_type) {
-	if (g_host->connected()) {
-		Serial.println("Close the connection first.");
-		return false;
-	}
-	g_term_type = term_type;
-	write_eeprom(EEPROM_SYS3_ADDR, g_term_type);
-	g_ansi_mode = (ansi_terminals.indexOf("|"+g_term_type+"|") >= 0);
-	write_eeprom(EEPROM_SYS4_ADDR, g_ansi_mode ? "ON" : "OFF");
-	return true;
-}
-
 void Terminal::show_term_type() {
-	Serial.printf("Terminal type is %s.\r\n", (g_term_type == "") ? "none" : g_term_type);
-}
-
-bool Terminal::toggle_ansi_mode() {
-	if (g_host->connected()) {
-		Serial.println("Close the connection first.");
-		return false;
-	}
-	if (!g_ansi_mode && ansi_terminals.indexOf("|"+g_term_type+"|") < 0) {
-		Serial.println("Invalid terminal type.");
-		return false;
-	}
-	g_ansi_mode = !g_ansi_mode;
-	write_eeprom(EEPROM_SYS4_ADDR, g_ansi_mode ? "ON" : "OFF");
-	return true;
-}
-
-void Terminal::show_ansi_mode() {
-	if (g_ansi_mode)
-		Serial.println("ANSI sequences will be handled by the terminal driver.");
-	else
-		Serial.println("ANSI sequences will be passed through to your terminal.");
+	String term_type = (vt_term_type == "") ? "none" : vt_term_type;
+	Serial.printf("Terminal type is %s (ROWS=%d, COLS=%d).\r\n", term_type, vt_rows, vt_cols);
 }
 
 char dec_special_graphics(char c) {
@@ -630,14 +601,21 @@ char dec_special_graphics(char c) {
 	return '?';
 }
 
-void init_terminal() {
-	if (g_terminal)
-		delete g_terminal;
-	if (g_ansi_mode && ansi_terminals.indexOf("|"+g_term_type+"|") >= 0) {
-		g_telnet_term_type = "vt100";
-		if (g_term_type == "adm3a") g_terminal = new LSI_ADM3A();
-		return;
+bool init_terminal(String term_type) {
+	if (g_host->connected()) {
+		Serial.println("Disconnect first.");
+		return false;
 	}
-	g_telnet_term_type = g_term_type;
-	g_terminal = new NONE();
+	if (term_type.endsWith("-ansi")) {
+		if (term_type == "adm3a-ansi") {
+			if (g_terminal) delete g_terminal;
+			g_terminal = new LSI_ADM3A(term_type.c_str());
+			return true;
+		}
+		Serial.println("Invalid terminal type.");
+		return false;
+	}
+	if (g_terminal) delete g_terminal;
+	g_terminal = new NONE(term_type.c_str());
+	return true;
 }

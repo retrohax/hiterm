@@ -15,23 +15,18 @@ void help_main() {
 	Serial.println("opentls         connect to a ssl site");
 	Serial.println("close           close current connection");
 	Serial.println("set             set operating parameters ('set ?' for more)");
-	Serial.println("unset           unset operating parameters ('unset ?' for more)");
 	Serial.println("toggle          toggle operating parameters ('toggle ?' for more)");
 	Serial.println("display         display operating parameters");
+	Serial.println("status          print status information");
 	Serial.println("restart         restart ESP device");
 }
 
 void help_set() {
 	Serial.println("baud            serial baud rate");
-	Serial.println("term            telnet TERMINFO name");
-}
-
-void help_unset() {
-	Serial.println("term            telnet TERMINFO name");
+	Serial.println("term            terminal type");
 }
 
 void help_toggle() {
-	Serial.println("ansi            toggle ansi mode");
 	Serial.println("crlf            toggle sending carriage returns as telnet <CR><LF>");
 	Serial.println("echo            toggle local echo");
 }
@@ -67,11 +62,11 @@ void wifi_config() {
 	Serial.print("SSID: ");
 	String ssid = readLineWithEcho();
 	Serial.println();
-	ssid = ssid.substring(0, EEPROM_FIELD_MAXLEN);
+	ssid = ssid.substring(0, EEPROM_FIELD_MAXLEN-1);
 	Serial.print("Passphrase: ");
 	String passphrase = readLineWithEcho();
 	Serial.println();
-	passphrase = passphrase.substring(0, EEPROM_FIELD_MAXLEN);
+	passphrase = passphrase.substring(0, EEPROM_FIELD_MAXLEN-1);
 	write_eeprom(EEPROM_SYS1_ADDR, ssid);
 	write_eeprom(EEPROM_SYS2_ADDR, passphrase);
 }
@@ -108,10 +103,8 @@ int set(String key, String val) {
 		return 1;
 	}
 	if (key == "TERM") {
-		if (g_terminal->set_term_type(val)) {
+		if (init_terminal(val)) {
 			g_terminal->show_term_type();
-			g_terminal->show_ansi_mode();
-			init_terminal();
 		}
 		return 1;
 	}
@@ -125,32 +118,10 @@ int set(String key, String val) {
 	return 0;
 }
 
-int unset(String key) {
-	key.toUpperCase();
-	if (key == "?") {
-		help_unset();
-		return 1;
-	}
-	if (key == "TERM") {
-		g_terminal->set_term_type("");
-		g_terminal->show_term_type();
-		init_terminal();
-		return 1;
-	}
-	return 0;
-}
-
 int toggle(String key) {
 	key.toUpperCase();
 	if (key == "?") {
 		help_toggle();
-		return 1;
-	}
-	if (key == "ANSI") {
-		if (g_terminal->toggle_ansi_mode()) {
-			g_terminal->show_ansi_mode();
-			init_terminal();
-		}
 		return 1;
 	}
 	if (key == "CRLF") {
@@ -174,7 +145,6 @@ void display() {
 	Serial.println("stop            [^S]");
 	Serial.println();
 	g_terminal->show_term_type();
-	g_terminal->show_ansi_mode();
 	g_host->show_crlf();
 	g_host->show_local_echo();
 	show_serial_baud_rate();
@@ -230,11 +200,6 @@ int process(String cmd_str) {
 		return set(key, val);
 	}
 
-	if (cmd == "UNSET") {
-		if (num_parts < 2) return 0;
-		return unset(parts[1]);
-	}
-
 	if (cmd == "TOGGLE") {
 		if (num_parts < 2) return 0;
 		return toggle(parts[1]);
@@ -242,6 +207,11 @@ int process(String cmd_str) {
 
 	if (cmd == "DISPLAY") {
 		display();
+		return 1;
+	}
+
+	if (cmd == "STATUS") {
+		g_host->show_status();
 		return 1;
 	}
 
