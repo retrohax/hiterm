@@ -31,7 +31,7 @@ hiterm> set term vt100
 hiterm> open telehack.com
 ```
 
-Make sure the terminal you specify in the *set term* command is the correct one for your terminal as described in the TERMINFO database because HITERM will send this name to the host you are connecting to using the telnet protocol. You can verify you have the correct name using the *infocmp* command on Linux, for example: *infocmp adm3a*  
+Make sure the terminal you specify in the *set term* command is the correct one for your terminal as described in the TERMINFO database because HITERM will send this name to the host you are connecting to using the telnet protocol. The host will then look up your terminal type in its TERMINFO database and will begin using the control sequences it finds for your terminal. You can verify you have the correct name using the *infocmp* command in Linux, for example: *infocmp adm3a*  
 
 #### Recommended
 
