@@ -58,4 +58,6 @@ Set your terminal to use the same baud rate and then restart the ESP8266.
  hiterm> open telehack.com
  .zrun aquarium
 ```
-Note that this is DEC ANSI not BBS ANSI.  
+1. This is a special case where *adm3a-ansi* is not a valid TERMINFO terminal type, the *-ansi* is added to let HITERM know to use the ANSI emulator.
+2. Note that this is DEC ANSI not BBS ANSI.
+
