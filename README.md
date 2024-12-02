@@ -51,7 +51,7 @@ Set your terminal to use the same baud rate and then reset the ESP8266.
 
  #### Lear Siegler ADM-3A
 
- If you happen to own a real ADM-3A, try the DEC ANSI emulator to make your ADM-3A work like a VT100:  
+ If you happen to own an ADM-3A, try the DEC ANSI emulator to make your ADM-3A work like a VT100:  
  ```
  hiterm> set term adm3a-ansi
  hiterm> open telehack.com
