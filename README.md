@@ -6,17 +6,19 @@ It runs on ESP8266 devices (NodeMCU, etc.) to connect the terminal to wifi.
 
 If you happen to be using a Lear Siegler ADM-3A "dumb" terminal, HITERM can convert DEC ANSI sequences to the primitive cursor control commands understood by the terminal. This allows your terminal to run a lot of programs it otherwise would not be able to. For example, Dope Wars on sdf.org, z-machine based text adventures, irssi (IRC) and many other ncurses programs.  
 
+![ADM-3A](images/adm3a.jpg)
+
 If I ever find a Soroc IQ-120, I'd like to add the ANSI support to it as well.  
 
 
 ### QUICK START
 
-Load hiterm.ino in the Arduino IDE  
-Select your ESP8266 board in Boards Manager  
-Compile and upload to your board  
-Use a TTL to RS232 converter to connect the ESP8266 to your terminal  
-Set terminal to 1200 baud  
-Boot the ESP8266  
+1. Load hiterm.ino in the Arduino IDE  
+2. Select your ESP8266 board in Boards Manager  
+3. Compile and upload to your board  
+4. Use a TTL to RS232 converter to connect the ESP8266 to your terminal  
+5. Set terminal to 1200 baud  
+6. 	Boot the ESP8266  
 
 ```
 hiterm> wifi
