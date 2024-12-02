@@ -33,7 +33,7 @@ hiterm> open telehack.com
 
 Make sure the terminal you specify in the *set term* command is the correct one for your terminal as described in the TERMINFO database because HITERM will send this name to the host you are connecting to using the telnet protocol. The host will then look up your terminal type in its TERMINFO database and will begin using the control sequences it finds for your terminal. You can verify you have the correct name using the *infocmp* command in Linux, for example: *infocmp adm3a*  
 
-#### Recommended
+#### Optional
 
 Change the baud rate to the highest value supported by your terminal:  
 ```
@@ -64,5 +64,4 @@ Plug the serial cable from your terminal into the DB9 connecter (get a DB25 to D
  .aquarium
 ```
 * This is a special case where *adm3a-ansi* is not a valid TERMINFO terminal type, the *-ansi* is added to let HITERM know to use the ANSI emulator.
-* Note that this is DEC ANSI not BBS ANSI.
-
+* Note that this is DEC ANSI not BBS ANSI. BBS ANSI is kind of an extension of DEC ANSI that generally expects the terminal to have 25 rows and makes heavy use of color and other effects.
