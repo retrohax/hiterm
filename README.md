@@ -4,7 +4,7 @@ HITERM is a telnet client for your serial terminal.
 
 It runs on ESP8266 devices (NodeMCU, etc.) to connect the terminal to wifi.  
 
-If you happen to be using a Lear Siegler ADM-3A "dumb" terminal, HITERM can convert DEC ANSI sequences to the primitive cursor control commands understood by the terminal. This allows your terminal to run a lot of programs it otherwise would not be able to. For example, Dope Wars on sdf.org, z-machine based text adventures, irssi (IRC) and many other ncurses programs.  
+If you happen to be using a Lear Siegler ADM-3A "dumb" terminal, HITERM can convert DEC ANSI sequences to the primitive cursor control commands understood by the terminal. This allows your terminal to run a lot of programs it otherwise would not be able to. For example, Dope Wars on sdf.org, z-machine based text adventures, irssi (IRC) and many other ncurses programs. It works pretty well at 19200 baud.  
 
 ![ADM-3A](images/adm3a.jpg)
 
