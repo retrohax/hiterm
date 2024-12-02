@@ -36,9 +36,10 @@ hiterm> open telehack.com
 Change the baud rate to the highest value supported by your terminal:  
 ```
 hiterm> set baud 19200
+hiterm> restart
 ```
 
-Set your terminal to use the same baud rate and then reset the ESP8266.  
+Set your terminal to use the same baud rate and then restart the ESP8266.  
 
 
 #### Notes
