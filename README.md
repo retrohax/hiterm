@@ -13,16 +13,20 @@ If I ever find a Soroc IQ-120, I'd like to add the ANSI support to it as well.
 
 ### QUICK START
 
-1. Load hiterm.ino in the Arduino IDE  
-2. Select your ESP8266 board in Boards Manager  
-3. Compile and upload to your board  
-4. Use a TTL to RS232 converter to connect the ESP8266 to your terminal  
-5. Set terminal to 1200 baud  
-6. 	Boot the ESP8266  
+1. Load hiterm.ino in the Arduino IDE
+2. Select your ESP8266 board in Boards Manager
+3. Compile and upload to your board
+4. Use a TTL to RS232 converter to connect the ESP8266 to your terminal
+5. Set terminal to 1200 baud
+6. Boot the ESP8266
 
 ```
 hiterm> wifi
+SSID: <YOUR SSID>
+Passphrase: <YOUR PASSPHRASE>
 hiterm> restart
+```
+```
 hiterm> set term vt100
 hiterm> open telehack.com
 ```
