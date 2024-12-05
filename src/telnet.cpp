@@ -94,10 +94,10 @@ void telnet_verb_DO(char c) {
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::SB);
 			telnet_write((char)telnet_options::NAWS);
-			to_big_endian(g_terminal->get_cols(), bytes);
+			to_big_endian((uint16_t)g_terminal->get_cols(), bytes);
 			telnet_write((char)bytes[0]);
 			telnet_write((char)bytes[1]);
-			to_big_endian(g_terminal->get_rows(), bytes);
+			to_big_endian((uint16_t)g_terminal->get_rows(), bytes);
 			telnet_write((char)bytes[0]);
 			telnet_write((char)bytes[1]);
 			telnet_write((char)telnet_verbs::IAC);
@@ -171,13 +171,13 @@ bool telnet_char(char c) {
 			telnet_verb_SB(option);
 			break;
 		}
-        case (char)telnet_verbs::DO: {
+		case (char)telnet_verbs::DO: {
 			if (!(g_host->available())) break;
 			char option = telnet_read();
 			telnet_verb_DO(option);
 			break;
 		}
-        case (char)telnet_verbs::DONT: {
+		case (char)telnet_verbs::DONT: {
 			if (!(g_host->available())) break;
         	char option = telnet_read();
         	telnet_verb_DONT(option);

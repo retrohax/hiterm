@@ -37,6 +37,7 @@ void Host::connect(String host, int port, bool use_tls) {
 			if (client->connect(ip, port)) {
 				Serial.printf("Connected to %s.\r\n", host_name.c_str());
 				Serial.printf("Escape character is '^]'.\r\n");
+				delay(1000);
 			} else {
 				Serial.printf("Could not connect to %s.\r\n", host_name.c_str());
 				delete client;

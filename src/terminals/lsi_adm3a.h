@@ -2,13 +2,10 @@
 
 class LSI_ADM3A : public Terminal {
 	public:
-		LSI_ADM3A(const char* term_type);
+		LSI_ADM3A(const char* term_type="adm3a-ansi", int rows=24, int cols=80);
 		virtual ~LSI_ADM3A();
 
 	protected:
-		static const int ROWS = 24;
-		static const int COLS = 80;
-
 		void rt_BEL();
 		void rt_home_cursor();
 		void rt_update_cursor(int y, int x);
@@ -18,6 +15,8 @@ class LSI_ADM3A : public Terminal {
 
 	private:
 		char **rt;
+		int rt_rows;
+		int rt_cols;
 		int rt_y;
 		int rt_x;
 

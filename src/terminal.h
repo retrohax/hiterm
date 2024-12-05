@@ -4,7 +4,7 @@
 
 class Terminal {
 	public:
-		Terminal(String term_type="", bool ansi_mode=false, int rows=24, int cols=80);
+		Terminal(String term_type, bool ansi_mode, int rows, int cols);
 		virtual ~Terminal();
 
 		void show_term_type();
@@ -50,8 +50,8 @@ class Terminal {
 
 		void show();
 		void show_vars();
-		uint16_t get_rows();
-		uint16_t get_cols();
+		int get_rows();
+		int get_cols();
 
 		static const int EVENT_MAX_PARMS = 100;
 
@@ -76,8 +76,8 @@ class Terminal {
 
 	private:
 		char **vt;
-		uint16_t vt_rows;
-		uint16_t vt_cols;
+		int vt_rows;
+		int vt_cols;
 		int vt_y;                     // ACTIVE_POSITION.LINE
 		int vt_x;                     // ACTIVE_POSITION.COLUMN
 		int vt_margin_top;
@@ -109,4 +109,4 @@ extern Terminal *g_terminal;
 extern const int TERM_MAX_Y;
 extern const int TERM_MAX_X;
 
-bool init_terminal(String term_type="");
+bool init_terminal(String term_type="", int rows=24, int cols=80);

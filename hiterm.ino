@@ -7,8 +7,10 @@
 #include "src/parser.h"
 #include "src/eeprom.h"
 #include "src/command.h"
+#include "src/serial.h"
 
 const String TITLE = "HITERM 0.1";
+const String CMD_PROMPT = "hiterm> ";
 bool connected_to_host = false;
 
 void setup() {
@@ -26,9 +28,7 @@ void setup() {
 		EEPROM.commit();
 	}
 
-	String baud_rate = read_eeprom(EEPROM_SERI_ADDR);
-	Serial.begin(baud_rate.toInt());
-	delay(500);
+	init_serial();
 	
 	Serial.printf("\r\n\r\n%s\r\n", TITLE.c_str());
 
@@ -54,8 +54,6 @@ void setup() {
 	} else {
 		Serial.println("WIFI NOT CONNECTED");
 	}
-
-	init_terminal();
 
 	Serial.printf("\r\nType 'help' for commands\r\n");
 }

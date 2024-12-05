@@ -1,17 +1,21 @@
+#include <ESP8266WiFi.h>
 #include "terminal.h"
-#include "terminals/none.h"
+#include "terminals/native.h"
 #include "terminals/lsi_adm3a.h"
 #include "host.h"
 #include "command.h"
 #include "eeprom.h"
+#include "telnet.h"
 
 const int TERM_MAX_Y = std::numeric_limits<int>::max();
 const int TERM_MAX_X = std::numeric_limits<int>::max();
 const int SAVE_YX_MAXLEN = 100;
 
+size_t g_free_heap = ESP.getFreeHeap();
+
 char dec_special_graphics(char c);
 
-Terminal *g_terminal = nullptr;
+Terminal *g_terminal = new NATIVE();
 
 Terminal::Terminal(String term_type, bool ansi_mode, int rows, int cols) {
 	vt_telnet_term_type = ansi_mode ? "vt100" : term_type;
@@ -528,11 +532,11 @@ int Terminal::get_vt_char(int y, int x) {
 	UTILITY METHODS
 */
 
-uint16_t Terminal::get_rows() {
+int Terminal::get_rows() {
 	return vt_rows;
 }
 
-uint16_t Terminal::get_cols() {
+int Terminal::get_cols() {
 	return vt_cols;
 }
 
@@ -580,8 +584,10 @@ void Terminal::show_vars() {
 }
 
 void Terminal::show_term_type() {
-	String term_type = (vt_term_type == "") ? "none" : vt_term_type;
-	Serial.printf("Terminal type is %s (ROWS=%d, COLS=%d).\r\n", term_type, vt_rows, vt_cols);
+	if (vt_term_type == "")
+		Serial.printf("Terminal type is none.\r\n");
+	else
+		Serial.printf("Terminal type is %s (ROWS=%d, COLS=%d).\r\n", vt_term_type, vt_rows, vt_cols);
 }
 
 char dec_special_graphics(char c) {
@@ -601,21 +607,43 @@ char dec_special_graphics(char c) {
 	return '?';
 }
 
-bool init_terminal(String term_type) {
-	if (g_host->connected()) {
-		Serial.println("Disconnect first.");
+bool init_terminal(String term_type, int rows, int cols) {
+
+	// Sanity check on terminal type
+	bool has_alpha = false;
+	for (char c : term_type) {
+		if (isAlpha(c)) {
+			has_alpha = true;
+			break;
+		}
+	}
+	if (!(term_type == "" or has_alpha)) {
+		Serial.println("Invalid terminal type.");
 		return false;
 	}
+
+	// For ansi terminals we need to make sure there's enough memory for both arrays (vt and rt)
+	// We're doing this for all terminals until we make non-ansi terminals pass-thru all i/o without
+	// creating a vt array.
+	size_t element_size = sizeof(char);
+	size_t max_elements = (g_free_heap * 0.9) / (2 * element_size);
+	Serial.printf("free_heap=%d, max_elements=%d, elements=%d\r\n", g_free_heap, max_elements, rows * cols);
+	if (rows * cols > max_elements) {
+		Serial.printf("Terminal size exceeds available memory.\r\n");
+		return false;
+	}
+
 	if (term_type.endsWith("-ansi")) {
 		if (term_type == "adm3a-ansi") {
-			if (g_terminal) delete g_terminal;
-			g_terminal = new LSI_ADM3A(term_type.c_str());
+			delete g_terminal;
+			g_terminal = new LSI_ADM3A("adm3a", rows, cols);
 			return true;
 		}
 		Serial.println("Invalid terminal type.");
 		return false;
 	}
-	if (g_terminal) delete g_terminal;
-	g_terminal = new NONE(term_type.c_str());
+
+	delete g_terminal;
+	g_terminal = new NATIVE(term_type.c_str(), rows, cols);
 	return true;
 }

@@ -1,14 +1,16 @@
 #include "../terminal.h"
 #include "lsi_adm3a.h"
 
-LSI_ADM3A::LSI_ADM3A(const char* term_type) : Terminal(term_type, true, ROWS, COLS) {
-	rt = new char *[ROWS];
-	for (int i=0; i<ROWS; i++)
-		rt[i] = new char[COLS];
+LSI_ADM3A::LSI_ADM3A(const char* term_type, int rows, int cols) : Terminal(term_type, true, rows, cols) {
+	rt = new char *[rows];
+	rt_rows = rows;
+	rt_cols = cols;
+	for (int i = 0; i < rows; i++)
+		rt[i] = new char[cols];
 }
 
 LSI_ADM3A::~LSI_ADM3A() {
-	for (int i=0; i<ROWS; i++)
+	for (int i = 0; i < rt_rows; i++)
 		delete[] rt[i];
 	delete[] rt;
 }
@@ -32,8 +34,8 @@ void LSI_ADM3A::rt_home_cursor() {
 void LSI_ADM3A::rt_update_cursor(int y, int x) {
 	if (y < 1) y = 1;
 	if (x < 1) x = 1;
-	if (y > ROWS) y = ROWS;
-	if (x > COLS) x = COLS;
+	if (y > rt_rows) y = rt_rows;
+	if (x > rt_cols) x = rt_cols;
 
 	// define a 2D array of methods
 	int methods[4][2] = {
@@ -90,12 +92,12 @@ void LSI_ADM3A::rt_update(int fr_y, int fr_x, int to_y, int to_x) {
 	while (true) {
 		if (rt[y-1][x-1] != get_vt_char(y-1, x-1)) {
 			rt[y-1][x-1] = get_vt_char(y-1, x-1);
-			if (y == ROWS && x == COLS) {
+			if (y == rt_rows && x == rt_cols) {
 				; // print would cause adm-3a to scroll
 			} else {
 				rt_update_cursor(y, x);
 				Serial.printf("%c", rt[y-1][x-1]);
-				if (rt_x < COLS)
+				if (rt_x < rt_cols)
 					rt_x++;
 				else {
 					rt_y++;
@@ -105,7 +107,7 @@ void LSI_ADM3A::rt_update(int fr_y, int fr_x, int to_y, int to_x) {
 		}
 		if (y == to_y && x == to_x)
 			break;
-		if (x < COLS)
+		if (x < rt_cols)
 			x++;
 		else {
 			y++;
@@ -119,9 +121,9 @@ void LSI_ADM3A::rt_update(int fr_y, int fr_x, int to_y, int to_x) {
 // Clears a defined region of the screen.
 // Cursor position is unchanged.
 void LSI_ADM3A::rt_clear(int fr_y, int fr_x, int to_y, int to_x) {
-	if (fr_y == 1 && fr_x == 1 && to_y == ROWS && to_x == COLS) {
-		for (int row=1; row<=ROWS; row++)
-			for (int col=1; col<=COLS; col++)
+	if (fr_y == 1 && fr_x == 1 && to_y == rt_rows && to_x == rt_cols) {
+		for (int row=1; row<=rt_rows; row++)
+			for (int col=1; col<=rt_cols; col++)
 				rt[row-1][col-1] = get_vt_char(row-1, col-1);
 		Serial.print("\032");
 		// at 19200 baud adm-3a drops characters
@@ -137,19 +139,19 @@ void LSI_ADM3A::rt_clear(int fr_y, int fr_x, int to_y, int to_x) {
 // Scrolls a defined region of the screen.
 // Cursor position is unchanged.
 void LSI_ADM3A::rt_scroll(int fr_y, int to_y, int n) {
-	if (fr_y == 1 && to_y == ROWS && n > 0) {
+	if (fr_y == 1 && to_y == rt_rows && n > 0) {
 		// update rt
-		for (int row=1; row<=ROWS; row++)
-			for (int col=1; col<=COLS; col++)
+		for (int row=1; row<=rt_rows; row++)
+			for (int col=1; col<=rt_cols; col++)
 				rt[row-1][col-1] = get_vt_char(row-1, col-1);
 		// let the terminal scroll the screen
 		int save_y = rt_y;
-		rt_update_cursor(ROWS, 1);
+		rt_update_cursor(rt_rows, 1);
 		for (int i=0; i<n; i++)
 			Serial.printf("\012");
 		rt_update_cursor(save_y, rt_x);
 	} else {
-		rt_update(fr_y, 1, to_y, COLS);
+		rt_update(fr_y, 1, to_y, rt_cols);
 	}
 }
 
@@ -159,16 +161,16 @@ void LSI_ADM3A::rt_print(char c) {
 
 	rt[rt_y-1][rt_x-1] = c;
 
-	if (rt_x == COLS && rt_y == ROWS) {
+	if (rt_x == rt_cols && rt_y == rt_rows) {
 		// print would cause adm-3a to scroll
 	} else {
 		Serial.print(c);
-		if (rt_x < COLS)
+		if (rt_x < rt_cols)
 			rt_x++;
 		else {
 			rt_y++;
 			rt_x = 1;
-			rt_update_cursor(rt_y-1, COLS);
+			rt_update_cursor(rt_y-1, rt_cols);
 		}
 	}
 
