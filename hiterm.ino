@@ -2,12 +2,11 @@
 #include <WiFiClientSecure.h>
 #include <EEPROM.h>
 #include "src/host.h"
-#include "src/telnet.h"
-#include "src/terminal.h"
-#include "src/parser.h"
 #include "src/eeprom.h"
 #include "src/command.h"
 #include "src/serial.h"
+#include "src/term_telnet.h"
+#include "src/terminal.h"
 
 const String TITLE = "HITERM 0.1";
 const String CMD_PROMPT = "hiterm> ";
@@ -55,6 +54,8 @@ void setup() {
 		Serial.println("WIFI NOT CONNECTED");
 	}
 
+	init_terminal("vt100");
+
 	Serial.printf("\r\nType 'help' for commands\r\n");
 }
 
@@ -64,7 +65,6 @@ void loop() {
 	if (g_host->connected() && !connected_to_host) {
 		connected_to_host = true;
 		g_terminal->reset();
-		parser_init();
 	}
 	if (!g_host->connected() && connected_to_host) {
 		connected_to_host = false;
@@ -73,10 +73,9 @@ void loop() {
 		Serial.printf("\nConnection closed.\n");
 	}
 	if (g_terminal->available()) {
-		g_host->send(g_terminal->get());
+		g_host->send(g_terminal->read());
 	}
 	if (g_host->available()) {
-		char c = g_host->get();
-		if (!telnet_char(c)) parse_char(c);
+		g_terminal->print(g_host->get());
 	}
 }

@@ -15,9 +15,6 @@ Host :: Host() {
 		g_rx_hist[i] = '\0';	
 }
 
-Host::~Host() {
-}
-
 void Host::connect(String host, int port, bool use_tls) {
 	if (client && client->connected())
 		Serial.printf("Already connected.\r\n");
@@ -173,7 +170,7 @@ void Host::save_tx_char(char c) {
 		g_tx_hist_index = 0;
 }
 
-void Host::show_rx_hist(String find_str) {
+void Host::show_rx_hist() {
 	for (int i=0; i<RX_HIST_MAXLEN; i++) {
 		g_rx_hist_index++;
 		if (g_rx_hist_index > RX_HIST_MAXLEN-1)

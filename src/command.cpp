@@ -1,14 +1,11 @@
 #include "command.h"
 #include "host.h"
 #include "terminal.h"
-#include "parser.h"
 #include "serial.h"
 #include "wifi.h"
 
 const int MAX_CMD_LEN = 80;
 const int MAX_CMD_PARTS = 10;
-const int MAX_ROWS = 60;
-const int MAX_COLS = 132;
 
 struct Command {
 	const char* name;
@@ -37,14 +34,16 @@ void cmd_close_connection();
 void cmd_display();
 void cmd_show_status();
 void cmd_show_vars();
+void cmd_show_rx_hist();
+void cmd_show_tx_hist();
 void cmd_restart_device();
 void cmd_help_toggle();
 void cmd_toggle_crlf();
 void cmd_toggle_echo();
 void cmd_toggle_parameters(String key);
 void cmd_help_set(const String& val, String* options, int option_count);
-void cmd_set_baud_command(const String& val, String* options, int option_count);
-void cmd_set_term_command(const String& val, String* options, int option_count);
+void cmd_set_baud_rate(const String& val, String* options, int option_count);
+void cmd_set_term_type(const String& val, String* options, int option_count);
 void cmd_set_parameters(String key, String val, String* options, int option_count);
 
 void split_str(String str, char delimiter, String results[], int &count, int max_parts);
@@ -66,6 +65,11 @@ void cmd_help_main() {
 	Serial.println("display         display operating parameters");
 	Serial.println("status          print status information");
 	Serial.println("restart         restart ESP device");
+	Serial.println();
+	Serial.println("Debug commands:");
+	Serial.println("show_vars       show terminal variables");
+	Serial.println("show_rx         show received data");
+	Serial.println("show_tx         show sent data");
 }
 
 void cmd_help_toggle() {
@@ -75,7 +79,7 @@ void cmd_help_toggle() {
 
 void cmd_help_set(const String& val, String* options, int option_count) {
 	Serial.println("baud            serial baud rate");
-	Serial.println("term            terminal type [rows] [cols]");
+	Serial.println("term            terminal type (optional: rows cols)");
 }
 
 /*
@@ -107,8 +111,14 @@ const Command MAIN_COMMANDS[] = {
 	{"STATUS", [](String* parts, int count) {
 		cmd_show_status();
 	}},
-	{"VARS", [](String* parts, int count) {
+	{"SHOW_VARS", [](String* parts, int count) {
 		cmd_show_vars();
+	}},
+	{"SHOW_RX", [](String* parts, int count) {
+		cmd_show_rx_hist();
+	}},
+	{"SHOW_TX", [](String* parts, int count) {
+		cmd_show_tx_hist();
 	}},
 	{"RESTART", [](String* parts, int count) {
 		cmd_restart_device();
@@ -193,6 +203,14 @@ void cmd_show_vars() {
 	g_terminal->show_vars();
 }
 
+void cmd_show_rx_hist() {
+	g_host->show_rx_hist();
+}
+
+void cmd_show_tx_hist() {
+	g_host->show_tx_hist();
+}
+
 void cmd_restart_device() {
 	Serial.println("Restarting");
 	ESP.restart();
@@ -216,8 +234,8 @@ void cmd_toggle_parameters(String key) {
 
 const SetCommand SET_COMMANDS[] = {
     {"?", cmd_help_set},
-    {"BAUD", cmd_set_baud_command},
-    {"TERM", cmd_set_term_command},
+    {"BAUD", cmd_set_baud_rate},
+    {"TERM", cmd_set_term_type},
     {nullptr, nullptr}  // Terminator
 };
 
@@ -242,41 +260,17 @@ const SetCommand* find_set_command(const String& input) {
     return match;
 }
 
-void cmd_set_baud_command(const String& val, String* options, int option_count) {
+void cmd_set_baud_rate(const String& val, String* options, int option_count) {
     uint32_t baud_rate = strtoul(val.c_str(), NULL, 10);
     set_serial_baud_rate(baud_rate);
     show_serial_baud_rate();
 }
 
-void cmd_set_term_command(const String& val, String* options, int option_count) {
-
-    // Can't change terminal type while connected
-    if (g_host->connected()) {
-        Serial.println("Disconnect first.");
-        return;
-    }
-
+void cmd_set_term_type(const String& val, String* options, int option_count) {
     String term_type = val;
-	int rows = !options[0].isEmpty() ? options[0].toInt() : -1;
-	int cols = !options[1].isEmpty() ? options[1].toInt() : -1;
-
-    if (term_type.equalsIgnoreCase("NONE"))
-        term_type = "";
-
-	if (term_type.isEmpty()) {
-        rows = 0;
-        cols = 0;
-    }
-
-    bool success;
-    if (cols != -1) {  // Both rows and cols specified
-        success = init_terminal(term_type, rows, cols);
-    } else if (rows != -1) {  // Only rows specified
-        success = init_terminal(term_type, rows);
-    } else {  // No dimensions specified
-        success = init_terminal(term_type);
-    }
-    if (success) {
+	int rows = options[0].toInt();
+	int cols = options[1].toInt();
+    if (init_terminal(term_type, rows, cols)) {
         g_terminal->show_term_type();
     }
 }

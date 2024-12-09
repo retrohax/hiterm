@@ -1,42 +1,66 @@
-#include "telnet.h"
+#include <Arduino.h>
+#include <limits>
 #include "host.h"
-#include "terminal.h"
+#include "command.h"
+#include "term_base.h"
+#include "term_telnet.h"
 
-static const int BUFFER_SIZE = 256;
-char g_buffer[BUFFER_SIZE];
-int g_buffer_pos = 0;
+void to_big_endian(uint16_t value, uint8_t* bytes);
 
-void to_big_endian(uint16_t value, uint8_t* bytes) {
-	bytes[0] = (value >> 8) & 0xFF;
-	bytes[1] = value & 0xFF;
+TERM_TELNET::TERM_TELNET(const String& term_type, int rows, int cols) : TERM_BASE() {
+	m_term_type = term_type;
+	m_term_rows = rows;
+	m_term_cols = cols;
 }
 
-char telnet_read() {
-	return g_host->read();
-}
-
-void telnet_write(char c) {
-	if (g_buffer_pos < BUFFER_SIZE) {
-		g_buffer[g_buffer_pos++] = c;
+void TERM_TELNET::show_term_type() {
+	if (m_term_rows == 0) {
+		Serial.printf(
+			"Terminal type is %s (COLS=%d).\r\n",
+			m_term_type.c_str(),
+			m_term_cols
+		);
+	} else {
+		Serial.printf(
+			"Terminal type is %s (ROWS=%d, COLS=%d).\r\n",
+			m_term_type.c_str(),
+			m_term_rows,
+			m_term_cols
+		);
 	}
 }
 
-void telnet_write_str(String str) {
+void TERM_TELNET::print(char c) {
+	if (!telnet_char(c))
+		TERM_BASE::print(c);
+}
+
+char TERM_TELNET::telnet_read() {
+	return g_host->read();
+}
+
+void TERM_TELNET::telnet_write(char c) {
+	if (m_write_buffer_pos < WRITE_BUFFER_SIZE) {
+		m_write_buffer[m_write_buffer_pos++] = c;
+	}
+}
+
+void TERM_TELNET::telnet_write_str(String str) {
 	for (int i=0; i < str.length(); i++)
 		telnet_write(str[i]);
 }
 
-void telnet_flush() {
-	if (g_buffer_pos > 0) {
-		g_host->write_buffer(g_buffer, g_buffer_pos);
-		g_buffer_pos = 0;
+void TERM_TELNET::telnet_flush() {
+	if (m_write_buffer_pos > 0) {
+		g_host->write_buffer(m_write_buffer, m_write_buffer_pos);
+		m_write_buffer_pos = 0;
 	}
 }
 
-void telnet_verb_SB(char c) {
+void TERM_TELNET::telnet_verb_SB(char c) {
 	switch (c) {
 		case (char)telnet_options::TERM_TYPE: {
-			if (g_terminal->get_telnet_term_type() == "") break;
+			if (m_term_type == "") break;
 			if (!(g_host->available())) break;
 			char sb_verb1 = telnet_read();
 			if (!(g_host->available())) break;
@@ -50,7 +74,7 @@ void telnet_verb_SB(char c) {
 				telnet_write((char)telnet_verbs::SB);
 				telnet_write((char)telnet_options::TERM_TYPE);
 				telnet_write((char)telnet_verbs::IS);
-				telnet_write_str(g_terminal->get_telnet_term_type());
+				telnet_write_str(m_term_type);
 				telnet_write((char)telnet_verbs::IAC);
 				telnet_write((char)telnet_verbs::SE);
 				telnet_flush();
@@ -62,7 +86,7 @@ void telnet_verb_SB(char c) {
 	}	
 }
 
-void telnet_verb_DO(char c) {
+void TERM_TELNET::telnet_verb_DO(char c) {
 	switch (c) {
 		case (char)telnet_options::SGA: {
 			telnet_write((char)telnet_verbs::IAC);
@@ -72,7 +96,7 @@ void telnet_verb_DO(char c) {
 			break;
 		}
 		case (char)telnet_options::TERM_TYPE: {
-			if (g_terminal->get_telnet_term_type() == "") {
+			if (m_term_type == "") {
 				telnet_write((char)telnet_verbs::IAC);
 				telnet_write((char)telnet_verbs::WONT);
 				telnet_write((char)telnet_options::TERM_TYPE);
@@ -94,10 +118,10 @@ void telnet_verb_DO(char c) {
 			telnet_write((char)telnet_verbs::IAC);
 			telnet_write((char)telnet_verbs::SB);
 			telnet_write((char)telnet_options::NAWS);
-			to_big_endian((uint16_t)g_terminal->get_cols(), bytes);
+			to_big_endian((uint16_t)m_term_cols, bytes);
 			telnet_write((char)bytes[0]);
 			telnet_write((char)bytes[1]);
-			to_big_endian((uint16_t)g_terminal->get_rows(), bytes);
+			to_big_endian((uint16_t)m_term_rows, bytes);
 			telnet_write((char)bytes[0]);
 			telnet_write((char)bytes[1]);
 			telnet_write((char)telnet_verbs::IAC);
@@ -115,14 +139,14 @@ void telnet_verb_DO(char c) {
 	}
 }
 
-void telnet_verb_DONT(char c) {
+void TERM_TELNET::telnet_verb_DONT(char c) {
 	telnet_write((char)telnet_verbs::IAC);
 	telnet_write((char)telnet_verbs::WONT);
 	telnet_write(c);
 	telnet_flush();
 }
 
-void telnet_verb_WILL(char c) {
+void TERM_TELNET::telnet_verb_WILL(char c) {
 	switch (c) {
 		case (char)telnet_options::ECHO: {
 			telnet_write((char)telnet_verbs::IAC);
@@ -149,14 +173,14 @@ void telnet_verb_WILL(char c) {
 	}
 }
 
-void telnet_verb_WONT(char c) {
+void TERM_TELNET::telnet_verb_WONT(char c) {
 	telnet_write((char)telnet_verbs::IAC);
 	telnet_write((char)telnet_verbs::DONT);
 	telnet_write(c);
 	telnet_flush();
 }
 
-bool telnet_char(char c) {
+bool TERM_TELNET::telnet_char(char c) {
 	if (c != (char)telnet_verbs::IAC) return false;
 	if (!(g_host->available())) return false;
 	char verb = telnet_read();
@@ -198,3 +222,13 @@ bool telnet_char(char c) {
 	}
 	return true;
 }
+
+/*
+	UTILITY FUNCTIONS
+*/
+
+void to_big_endian(uint16_t value, uint8_t* bytes) {
+	bytes[0] = (value >> 8) & 0xFF;
+	bytes[1] = value & 0xFF;
+}
+

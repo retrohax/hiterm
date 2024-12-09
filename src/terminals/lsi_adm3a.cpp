@@ -1,7 +1,8 @@
-#include "../terminal.h"
+#include <Arduino.h>
 #include "lsi_adm3a.h"
+#include "../term_ansi.h"
 
-LSI_ADM3A::LSI_ADM3A(const char* term_type, int rows, int cols) : Terminal(term_type, true, rows, cols) {
+LSI_ADM3A::LSI_ADM3A(const String& term_type, int rows, int cols) : TERM_ANSI(term_type, rows, cols) {
 	rt = new char *[rows];
 	rt_rows = rows;
 	rt_cols = cols;
@@ -10,9 +11,11 @@ LSI_ADM3A::LSI_ADM3A(const char* term_type, int rows, int cols) : Terminal(term_
 }
 
 LSI_ADM3A::~LSI_ADM3A() {
-	for (int i = 0; i < rt_rows; i++)
-		delete[] rt[i];
-	delete[] rt;
+	if (rt) {
+		for (int i = 0; i < rt_rows; i++)
+			delete[] rt[i];
+		delete[] rt;
+	}
 }
 
 void LSI_ADM3A::rt_BEL() {
@@ -163,6 +166,7 @@ void LSI_ADM3A::rt_print(char c) {
 
 	if (rt_x == rt_cols && rt_y == rt_rows) {
 		// print would cause adm-3a to scroll
+		// maybe need to add an option in case dip switch is set to prevent scrolling
 	} else {
 		Serial.print(c);
 		if (rt_x < rt_cols)

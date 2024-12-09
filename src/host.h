@@ -5,7 +5,7 @@
 class Host {
 	public:
 		Host();
-		virtual ~Host();
+		virtual ~Host() = default;
 
 		static const int TX_HIST_MAXLEN = 1000;
 		static const int RX_HIST_MAXLEN = 2048;
@@ -29,9 +29,7 @@ class Host {
 		void show_crlf();
 		void show_status();
 		void toggle_crlf();
-		void show_rx_hist(String find_str="");
-		void save_rx_hist();
-		void replay_rx_hist();
+		void show_rx_hist();
 		void show_tx_hist();
 
 		Client *client = nullptr;
