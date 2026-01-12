@@ -13,23 +13,6 @@ TERM_TELNET::TERM_TELNET(const String& term_type, int rows, int cols) : TERM_BAS
 	m_term_cols = cols;
 }
 
-void TERM_TELNET::show_term_type() {
-	if (m_term_rows == 0) {
-		Serial.printf(
-			"Terminal type is %s (COLS=%d).\r\n",
-			m_term_type.c_str(),
-			m_term_cols
-		);
-	} else {
-		Serial.printf(
-			"Terminal type is %s (ROWS=%d, COLS=%d).\r\n",
-			m_term_type.c_str(),
-			m_term_rows,
-			m_term_cols
-		);
-	}
-}
-
 void TERM_TELNET::print(char c) {
 	if (!telnet_char(c))
 		TERM_BASE::print(c);

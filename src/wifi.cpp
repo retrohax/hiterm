@@ -7,6 +7,7 @@ String read_line_with_echo() {
         if (Serial.available()) {
             char c = Serial.read();
             if (c == '\r') break;
+            Serial.print(c);  // Echo the character
             input += c;
         }
     }

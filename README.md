@@ -2,7 +2,7 @@
 
 HITERM is a telnet client for your serial terminal.
 
-It runs on ESP8266 devices (NodeMCU, etc.) to connect the terminal to wifi.  
+It runs on ESP32 devices to connect the terminal to wifi.  
 
 If you happen to be using a Lear Siegler ADM-3A "dumb" terminal, HITERM can convert DEC ANSI sequences to the primitive cursor control commands understood by the terminal. This allows your terminal to run a lot of programs it otherwise would not be able to. For example, Dope Wars on sdf.org, z-machine based text adventures, irssi (IRC) and many other ncurses programs. It works pretty well at 19200 baud.  
 
@@ -14,11 +14,11 @@ If I ever find a Soroc IQ-120, I'd like to add the ANSI support to it as well.
 ### QUICK START
 
 1. Load hiterm.ino in the Arduino IDE
-2. Select your ESP8266 board in Boards Manager
+2. Select your ESP32 board in Boards Manager
 3. Compile and upload to your board
-4. Use a TTL to RS232 converter to connect the ESP8266 to your terminal
+4. Use a TTL to RS232 converter to connect the ESP32 to your terminal
 5. Set terminal to 1200 baud
-6. Boot the ESP8266
+6. Boot the ESP32
 
 ```
 hiterm> wifi
@@ -41,18 +41,18 @@ hiterm> set baud 19200
 hiterm> restart
 ```
 
-Set your terminal to use the same baud rate and then restart the ESP8266.  
+Set your terminal to use the same baud rate and then restart the ESP32.  
 
 
 #### Hardware
 
-You should be able to use any ESP8266 development board, I like the NodeMCU.  
+You should be able to use any ESP32 development board.  
 
-The TTL to RS232 module is cheap on Amazon, just look for one with a DB9 connecter and six serial pins.  
+The TTL to RS232 module is cheap on Amazon, just look for one with a DB9 connecter and serial pins (you'll only use 4 pins).  
 
-Plug the serial cable from your terminal into the DB9 connecter (get a DB25 to DB9 adapter if you need one) and then connect VCC, GND, TXD, RXD pins to your ESP8266 board (TXD -> RXD, RXD -> TXD) and you're all set.  
+Plug the serial cable from your terminal into the DB9 connecter (get a DB25 to DB9 adapter if you need one) and then connect VCC, GND, TXD, RXD pins to your ESP32 board (TXD -> RXD, RXD -> TXD) and you're all set.  
  
-![ESP8266](images/ESP8266.jpg)
+![ESP32](images/ESP8266.jpg)
 
 
  #### Lear Siegler ADM-3A

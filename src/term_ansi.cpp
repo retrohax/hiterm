@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include "host.h"
 #include "command.h"
 #include "eeprom.h"
@@ -8,8 +8,7 @@
 
 char dec_special_graphics(char c);
 
-TERM_ANSI::TERM_ANSI(const String& term_type, int rows, int cols) : TERM_TELNET("vt100", rows, cols) {
-	vt_term_type = term_type;
+TERM_ANSI::TERM_ANSI(int rows, int cols) : TERM_TELNET("vt100", rows, cols) {
 	vt_rows = rows;
 	vt_cols = cols;
 	vt = new char *[vt_rows];
@@ -25,15 +24,6 @@ TERM_ANSI::~TERM_ANSI() {
 			delete[] vt[i];
 		delete[] vt;
 	}
-}
-
-void TERM_ANSI::show_term_type() {
-	Serial.printf(
-		"Terminal type is %s (ROWS=%d, COLS=%d).\r\n",
-		vt_term_type.c_str(),
-		vt_rows,
-		vt_cols
-	);
 }
 
 void TERM_ANSI::reset() {

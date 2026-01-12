@@ -7,7 +7,6 @@ class TERM_TELNET : public TERM_BASE {
 		TERM_TELNET(const String& term_type = "", int rows = 0, int cols = 0);
 
 		virtual void print(char c) override;
-		virtual void show_term_type() override;
 
 	protected:
 		String m_term_type;

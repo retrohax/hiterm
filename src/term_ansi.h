@@ -5,12 +5,11 @@
 
 class TERM_ANSI : public TERM_TELNET {
 	public:
-		TERM_ANSI(const String& term_type, int rows, int cols);
+		TERM_ANSI(int rows, int cols);
 		virtual ~TERM_ANSI() override;
 
 		virtual void reset() override;
 		virtual void print(char c) override;
-		virtual void show_term_type() override;
 		virtual void show_vars() override;
 
 	protected:
@@ -43,8 +42,6 @@ class TERM_ANSI : public TERM_TELNET {
 		int vt_save_x;
 		bool vt_save_origin_mode;
 		bool vt_save_bold_mode;
-
-		String vt_term_type;
 
 		void vt_print(char c);
 		void vt_home_cursor();

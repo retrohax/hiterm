@@ -1,6 +1,10 @@
 #pragma once
 #include <Arduino.h>
 #include "term_telnet.h"
+#include "host.h"
 
 extern TERM_BASE *g_terminal;
-bool init_terminal(String term_type="", int rows=0, int cols=0);
+extern String g_terminal_type;
+extern int g_terminal_rows;
+extern int g_terminal_cols;
+extern void init_terminal(ConnectionType conn_type);

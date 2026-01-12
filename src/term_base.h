@@ -12,5 +12,4 @@ class TERM_BASE {
 		virtual bool available();
 		virtual char read();
 		virtual void print(char c);
-		virtual void show_term_type();
 };

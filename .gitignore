@@ -1,2 +1,8 @@
 .DS_Store
 .vscode/
+
+# Private SSH key - do not commit
+data/ssh_key.pem
+
+CLAUDE.md
+

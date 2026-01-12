@@ -1,8 +1,9 @@
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <EEPROM.h>
 #include "eeprom.h"
 #include "host.h"
+#include "ssh_client.h"
 
 Host *g_host = new Host();
 
@@ -32,6 +33,8 @@ void Host::connect(String host, int port, bool use_tls) {
 				client = new WiFiClient();
 			}
 			if (client->connect(ip, port)) {
+				conn_type = CONN_ESTABLISHED;
+				update_data_received_time();  // Initialize timing on connection
 				Serial.printf("Connected to %s.\r\n", host_name.c_str());
 				Serial.printf("Escape character is '^]'.\r\n");
 				delay(1000);
@@ -47,12 +50,78 @@ void Host::connect(String host, int port, bool use_tls) {
 	}
 }
 
+void Host::connect_ssh(String host, int port, String user, String password) {
+	if (client && client->connected()) {
+		Serial.printf("Already connected.\r\n");
+		return;
+	}
+
+	host_name = host;
+	
+	delete client;
+	SSHClient* ssh_client = new SSHClient();
+	
+	// If no password provided, try key authentication
+	if (password.isEmpty()) {
+		const char* keyPath = "/ssh_key.pem";
+		if (!SSHClient::key_file_exists(keyPath)) {
+			Serial.println("No SSH key found. Upload ssh_key.pem to SPIFFS.");
+			delete ssh_client;
+			return;
+		}
+		Serial.printf("Trying %s:%d (SSH key auth)...\r\n", host.c_str(), port);
+		ssh_client->set_credentials(user.c_str(), nullptr);
+		ssh_client->set_key_file(keyPath);
+	} else {
+		Serial.printf("Trying %s:%d (SSH password auth)...\r\n", host.c_str(), port);
+		ssh_client->set_credentials(user.c_str(), password.c_str());
+	}
+	
+	client = ssh_client;
+
+	if (client->connect(host.c_str(), port)) {
+		conn_type = CONN_SSH;
+		update_data_received_time();  // Initialize timing on connection
+		Serial.printf("Connected to %s (SSH).\r\n", host_name.c_str());
+		Serial.printf("Escape character is '^]'.\r\n");
+		// SSH/Unix just needs \r, the PTY handles the conversion
+		line_end = "\r";
+	} else {
+		Serial.printf("Could not connect to %s.\r\n", host_name.c_str());
+		delete client;
+		client = nullptr;
+	}
+}
+
 bool Host::connected() {
 	return (client && client->connected());
 }
 
+bool Host::is_ssh_connection() {
+	return (conn_type == CONN_SSH);
+}
+
+void Host::keepalive() {
+    // Check if connected and it's an SSH connection (not telnet)
+    if (connected() && client && is_ssh_connection()) {
+        if (millis() - get_last_data_received_time() >= 60000) {  // 60 seconds
+            client->write((uint8_t)0x00);
+            update_data_received_time();  // Reset timer after sending keepalive
+        }
+    }
+}
+
 bool Host::available() {
-	return (client && client->connected() && client->available() && flow_mode == 1);
+	if (!client) return false;
+	if (!client->connected()) {
+		Serial.println("[Host:client disconnected]");
+		return false;
+	}
+	if (flow_mode != 1) {
+		// Don't spam - flow_mode 0 means XOFF (Ctrl+S was pressed)
+		return false;
+	}
+	return client->available();
 }
 
 void Host::shutdown() {
@@ -62,6 +131,7 @@ void Host::shutdown() {
 		delete client;
 		client = nullptr;
 	}
+	conn_type = CONN_NONE;
 }
 
 char Host::get() {
@@ -97,6 +167,7 @@ void Host::send(char c, bool send_ansi_sequence) {
 char Host::read() {
 	char c = client->read();
 	save_rx_char(c);
+	update_data_received_time();  // Track when data was received
 	return c;
 }
 
@@ -134,6 +205,7 @@ void Host::toggle_local_echo() {
 void Host::set_flow_mode(int n) {
 	flow_mode = n;
 }
+
 
 void Host::show_crlf() {
 	if (line_end == "\r\n")

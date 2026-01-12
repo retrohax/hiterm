@@ -2,12 +2,10 @@
 #include "lsi_adm3a.h"
 #include "../term_ansi.h"
 
-LSI_ADM3A::LSI_ADM3A(const String& term_type, int rows, int cols) : TERM_ANSI(term_type, rows, cols) {
-	rt = new char *[rows];
-	rt_rows = rows;
-	rt_cols = cols;
-	for (int i = 0; i < rows; i++)
-		rt[i] = new char[cols];
+LSI_ADM3A::LSI_ADM3A() : TERM_ANSI(rt_rows, rt_cols) {
+	rt = new char *[rt_rows];
+	for (int i = 0; i < rt_rows; i++)
+		rt[i] = new char[rt_cols];
 }
 
 LSI_ADM3A::~LSI_ADM3A() {

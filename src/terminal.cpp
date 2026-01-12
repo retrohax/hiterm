@@ -5,63 +5,54 @@
 #include "terminals/lsi_adm3a.h"
 
 TERM_BASE *g_terminal = new TERM_BASE();
-size_t g_free_heap = ESP.getFreeHeap();
+int g_terminal_rows = 0;
+int g_terminal_cols = 0;
+String g_terminal_type = "none";
 
-bool init_terminal(String term_type, int rows, int cols) {
+void init_terminal(ConnectionType conn_type) {
 
-    // Can't change terminal type while connected
-    if (g_host->connected()) {
-        Serial.println("Disconnect first.");
-        return false;
-    }
-
-	// Terminal type is none
-    if (term_type.isEmpty() || term_type.equalsIgnoreCase("NONE")) {
+	// Not yet connected
+	if (conn_type == CONN_NONE) {
+		TERM_BASE *new_term = new TERM_BASE();
 		delete g_terminal;
-		g_terminal = new TERM_BASE();
-		return true;
+		g_terminal = new_term;
+		return;
 	}
 
-	// Sanity check on terminal type
-	bool has_alpha = false;
-	for (char c : term_type) {
-		if (isAlpha(c)) {
-			has_alpha = true;
-			break;
-		}
+	// SSH connection
+	if (conn_type == CONN_SSH) {
+		TERM_BASE *new_term = new TERM_BASE();
+		delete g_terminal;
+		g_terminal = new_term;
+		return;
 	}
-	if (!has_alpha) {
-		Serial.println("Invalid terminal type.");
-		return false;
+	
+	// Raw connection
+	if (g_terminal_type.equalsIgnoreCase("none")) {
+		TERM_BASE *new_term = new TERM_BASE();
+		delete g_terminal;
+		g_terminal = new_term;
+		return;
 	}
 
-	if (term_type == "dumb") {
-		rows = 0;
-		if (cols < 1) cols = 80;
+	// LSI ADM-3A connected as a VT100 over telnet
+	if (g_terminal_type == "adm3a-ansi") {
+		TERM_BASE *new_term = new LSI_ADM3A();
+		delete g_terminal;
+		g_terminal = new_term;
+		return;
+	}
+
+	// Standard telnet connection
+	if (g_terminal_type.equalsIgnoreCase("dumb")) {
+		g_terminal_rows = 0;
+		if (g_terminal_cols < 1) g_terminal_cols = 80;
 	} else {
-		if (rows < 1) rows = 24;
-		if (cols < 1) cols = 80;
+		if (g_terminal_rows < 1) g_terminal_rows = 24;
+		if (g_terminal_cols < 1) g_terminal_cols = 80;
 	}
-
-	if (term_type.endsWith("-ansi")) {
-		// For ansi terminals we need to make sure there's enough memory for both arrays (vt and rt)
-		size_t element_size = sizeof(char);
-		size_t max_elements = (g_free_heap * 0.9) / (2 * element_size);
-		if (rows * cols > max_elements) {
-			Serial.printf("Terminal size exceeds available memory.\r\n");
-			return false;
-		}
-		if (term_type == "adm3a-ansi") {
-			delete g_terminal;
-			g_terminal = new LSI_ADM3A(term_type, rows, cols);
-			return true;
-		}
-		Serial.println("Invalid terminal type.");
-		return false;
-	}
-
+	TERM_BASE *new_term = new TERM_TELNET(g_terminal_type, g_terminal_rows, g_terminal_cols);
 	delete g_terminal;
-	g_terminal = new TERM_TELNET(term_type, rows, cols);
+	g_terminal = new_term;
 
-	return true;
 }

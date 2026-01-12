@@ -1,8 +1,9 @@
+#include "serial.h"
+#include "wifi.h"
 #include "command.h"
 #include "host.h"
 #include "terminal.h"
-#include "serial.h"
-#include "wifi.h"
+#include "eeprom.h"
 
 const int MAX_CMD_LEN = 80;
 const int MAX_CMD_PARTS = 10;
@@ -28,8 +29,9 @@ const ToggleCommand* find_toggle_command(const String& input);
 
 void cmd_help_main();
 void cmd_wifi_config();
-void cmd_open_connection(String host, int port);
-void cmd_open_tls_connection(String host, int port);
+void cmd_gateway_config(String gateway_ip);
+void cmd_open_connection(String host, int port, bool use_tls=false);
+void cmd_open_ssh_connection(String host, String user, String password, int port);
 void cmd_close_connection();
 void cmd_display();
 void cmd_show_status();
@@ -45,6 +47,8 @@ void cmd_help_set(const String& val, String* options, int option_count);
 void cmd_set_baud_rate(const String& val, String* options, int option_count);
 void cmd_set_term_type(const String& val, String* options, int option_count);
 void cmd_set_parameters(String key, String val, String* options, int option_count);
+void cmd_set_usr1(const String& val, String* options, int option_count);
+void cmd_set_usr2(const String& val, String* options, int option_count);
 
 void split_str(String str, char delimiter, String results[], int &count, int max_parts);
 
@@ -57,8 +61,9 @@ void cmd_help_main() {
 	Serial.println("Commands may be abbreviated.  Commands are:");
 	Serial.println();
 	Serial.println("wifi            configure wifi");
-	Serial.println("open            connect to a site");
-	Serial.println("tlsopen         connect to a TLS site");
+	Serial.println("gateway         set default gateway (temporary)");
+	Serial.println("ssh             connect via SSH (user@host[:port])");
+	Serial.println("open            connect (host [port] [use_tls])");
 	Serial.println("close           close current connection");
 	Serial.println("set             set operating parameters ('set ?' for more)");
 	Serial.println("toggle          toggle operating parameters ('toggle ?' for more)");
@@ -80,6 +85,8 @@ void cmd_help_toggle() {
 void cmd_help_set(const String& val, String* options, int option_count) {
 	Serial.println("baud            serial baud rate");
 	Serial.println("term            terminal type (optional: rows cols)");
+	Serial.println("usr1            USR1 string (Ctrl+A)");
+	Serial.println("usr2            USR2 string (Ctrl+B)");
 }
 
 /*
@@ -93,14 +100,43 @@ const Command MAIN_COMMANDS[] = {
     {"HELP", [](String* parts, int count) { 
         cmd_help_main(); 
     }},
-    {"WIFI", [](String* parts, int count) { 
-        cmd_wifi_config(); 
+    {"WIFI", [](String* parts, int count) {
+        cmd_wifi_config();
+    }},
+    {"GATEWAY", [](String* parts, int count) {
+        cmd_gateway_config(count >= 2 ? parts[1] : "");
     }},
 	{"OPEN", [](String* parts, int count) {
-		cmd_open_connection(count >= 2 ? parts[1] : "", count == 3 ? parts[2].toInt() : 23);
+		String host = count >= 2 ? parts[1] : "";
+		int port = count >= 3 ? parts[2].toInt() : 23;
+		bool use_tls = count >= 4 && parts[3].equalsIgnoreCase("use_tls");
+		cmd_open_connection(host, port, use_tls);
 	}},
-	{"TLSOPEN", [](String* parts, int count) {
-		cmd_open_tls_connection(count >= 2 ? parts[1] : "", count == 3 ? parts[2].toInt() : 992);
+	{"SSH", [](String* parts, int count) {
+		// Parse user@host or user@host:port syntax
+		if (count < 2) {
+			Serial.println("Usage: ssh user@host[:port]");
+			return;
+		}
+		String arg = parts[1];
+		int at_pos = arg.indexOf('@');
+		if (at_pos < 1) {
+			Serial.println("Usage: ssh user@host[:port]");
+			return;
+		}
+		String user = arg.substring(0, at_pos);
+		String host_port = arg.substring(at_pos + 1);
+		String host;
+		int port = 22;
+		int colon_pos = host_port.lastIndexOf(':');
+		if (colon_pos > 0) {
+			host = host_port.substring(0, colon_pos);
+			port = host_port.substring(colon_pos + 1).toInt();
+			if (port <= 0) port = 22;
+		} else {
+			host = host_port;
+		}
+		cmd_open_ssh_connection(host, user, "", port);
 	}},
 	{"CLOSE", [](String* parts, int count) {
 		cmd_close_connection();
@@ -162,20 +198,54 @@ void cmd_wifi_config() {
 	wifi_config();
 }
 
-void cmd_open_connection(String host, int port) {
-	if (host.isEmpty()) {
-		Serial.println("?Missing host");
+void cmd_gateway_config(String gateway_ip) {
+	if (gateway_ip.isEmpty()) {
+		Serial.println("Usage: gateway <IP address>");
 		return;
 	}
-	g_host->connect(host, port);
+
+	// Validate IP address format
+	IPAddress newGateway;
+	if (!newGateway.fromString(gateway_ip)) {
+		Serial.println("Invalid IP address format");
+		return;
+	}
+
+	// Get current network settings
+	IPAddress currentIP = WiFi.localIP();
+	IPAddress subnet = WiFi.subnetMask();
+	IPAddress dns = WiFi.dnsIP(0);
+
+	// Reconfigure with new gateway
+	if (WiFi.config(currentIP, newGateway, subnet, dns)) {
+		Serial.printf("Gateway changed to: %s\n", gateway_ip.c_str());
+	} else {
+		Serial.println("Failed to change gateway");
+	}
 }
 
-void cmd_open_tls_connection(String host, int port) {
+void cmd_open_connection(String host, int port, bool use_tls) {
 	if (host.isEmpty()) {
 		Serial.println("?Missing host");
 		return;
 	}
-	g_host->connect(host, port, true);
+	g_host->connect(host, port, use_tls);
+}
+
+void cmd_open_ssh_connection(String host, String user, String password, int port) {
+	if (g_terminal_type.equalsIgnoreCase("none")) {
+		Serial.println("SSH connections require a terminal type.");
+		return;
+	}
+	if (host.isEmpty()) {
+		Serial.println("?Missing host");
+		return;
+	}
+	if (user.isEmpty()) {
+		Serial.println("?Missing username");
+		return;
+	}
+	g_host->connect_ssh(host, port, user, password);
 }
 
 void cmd_close_connection() {
@@ -189,10 +259,20 @@ void cmd_display() {
 	Serial.println("start           [^Q]");
 	Serial.println("stop            [^S]");
 	Serial.println();
-	g_terminal->show_term_type();
+	if (g_terminal_type.equalsIgnoreCase("none")) {
+		Serial.printf("Terminal type is none (raw)\r\n");
+	} else if (g_terminal_type.equalsIgnoreCase("dumb")) {
+		Serial.printf("Terminal type is %s (cols: %d)\r\n", g_terminal_type.c_str(), g_terminal_cols);
+	} else {
+		Serial.printf("Terminal type is %s (rows: %d, cols: %d)\r\n", g_terminal_type.c_str(), g_terminal_rows, g_terminal_cols);
+	}
 	g_host->show_crlf();
 	g_host->show_local_echo();
 	show_serial_baud_rate();
+	String usr1 = read_eeprom(EEPROM_USR1_ADDR);
+	String usr2 = read_eeprom(EEPROM_USR2_ADDR);
+	Serial.printf("USR1 (Ctrl+A) : %s\r\n", usr1.c_str());
+	Serial.printf("USR2 (Ctrl+B) : %s\r\n", usr2.c_str());
 }
 
 void cmd_show_status() {
@@ -236,6 +316,8 @@ const SetCommand SET_COMMANDS[] = {
     {"?", cmd_help_set},
     {"BAUD", cmd_set_baud_rate},
     {"TERM", cmd_set_term_type},
+	{"USR1", cmd_set_usr1},
+	{"USR2", cmd_set_usr2},
     {nullptr, nullptr}  // Terminator
 };
 
@@ -267,12 +349,31 @@ void cmd_set_baud_rate(const String& val, String* options, int option_count) {
 }
 
 void cmd_set_term_type(const String& val, String* options, int option_count) {
-    String term_type = val;
-	int rows = options[0].toInt();
-	int cols = options[1].toInt();
-    if (init_terminal(term_type, rows, cols)) {
-        g_terminal->show_term_type();
+    g_terminal_type = val.isEmpty() ? "none" : val;
+    
+    // Set dimensions based on type
+    if (g_terminal_type.equalsIgnoreCase("none")) {
+        g_terminal_rows = 0;
+        g_terminal_cols = 0;
+    } else if (g_terminal_type.equalsIgnoreCase("dumb")) {
+        g_terminal_rows = 0;
+        g_terminal_cols = 80;
+        if (option_count > 0) g_terminal_cols = options[0].toInt();
+    } else {
+        // Default to ANSI/VT100-like terminal
+        g_terminal_rows = 24;
+        g_terminal_cols = 80;
+        if (option_count > 0) g_terminal_rows = options[0].toInt();
+        if (option_count > 1) g_terminal_cols = options[1].toInt();
     }
+}
+
+void cmd_set_usr1(const String& val, String* options, int option_count) {
+	write_eeprom(EEPROM_USR1_ADDR, val);
+}
+
+void cmd_set_usr2(const String& val, String* options, int option_count) {
+	write_eeprom(EEPROM_USR2_ADDR, val);
 }
 
 /*

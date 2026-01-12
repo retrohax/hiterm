@@ -3,13 +3,13 @@
 
 class LSI_ADM3A : public TERM_ANSI {
 	public:
-		LSI_ADM3A(const String& term_type, int rows, int cols);
+		LSI_ADM3A();
 		~LSI_ADM3A() override;
 
 	private:
 		char **rt;
-		int rt_rows;
-		int rt_cols;
+		static const int rt_rows = 24;
+		static const int rt_cols = 80;
 		int rt_y;
 		int rt_x;
 
