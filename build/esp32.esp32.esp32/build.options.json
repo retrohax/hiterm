@@ -1,9 +1,0 @@
-{
-  "additionalFiles": "../../..,../../../../../..,../../..,../..,../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../..,../../../..,../../../..,../../..,../../..",
-  "compiler.optimization_flags": "-Os",
-  "customBuildProperties": "",
-  "fqbn": "esp32:esp32:esp32:PartitionScheme=huge_app",
-  "hardwareFolders": "/home/retrohax/.arduino15/packages/esp32/hardware/esp32/3.3.5,/home/retrohax/.arduino15/packages/esp32/hardware/esp32/3.3.5",
-  "otherLibrariesFolders": "/home/retrohax/Arduino/libraries",
-  "sketchLocation": "/home/retrohax/projects/hiterm"
-}

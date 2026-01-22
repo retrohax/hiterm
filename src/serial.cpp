@@ -19,7 +19,6 @@ void init_serial(uint8_t rx, uint8_t tx) {
     String baud_rate = read_eeprom(EEPROM_SERI_ADDR);
     // Set a larger RX buffer to prevent overflow during SSH operations
     Serial.setRxBufferSize(1024);
-    //Serial.begin(baud_rate.toInt(), SERIAL_8N1, rx, tx);
-    Serial.begin(baud_rate.toInt());
+    Serial.begin(baud_rate.toInt(), SERIAL_8N1, rx, tx);
     delay(500);
 }

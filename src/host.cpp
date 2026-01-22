@@ -34,7 +34,7 @@ void Host::connect(String host, int port, bool use_tls) {
 			}
 			if (client->connect(ip, port)) {
 				conn_type = CONN_ESTABLISHED;
-				update_data_received_time();  // Initialize timing on connection
+ 				update_data_received_time();  // Initialize timing on connection
 				Serial.printf("Connected to %s.\r\n", host_name.c_str());
 				Serial.printf("Escape character is '^]'.\r\n");
 				delay(1000);

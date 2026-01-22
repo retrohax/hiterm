@@ -49,7 +49,6 @@ void cmd_set_term_type(const String& val, String* options, int option_count);
 void cmd_set_parameters(String key, String val, String* options, int option_count);
 void cmd_set_usr1(const String& val, String* options, int option_count);
 void cmd_set_usr2(const String& val, String* options, int option_count);
-
 void split_str(String str, char delimiter, String results[], int &count, int max_parts);
 
 
@@ -476,6 +475,7 @@ void command() {
 		}
 	}
 
+	Serial1.println(cmd_str.c_str()); // For debug output if needed
 	Serial.println();
 	process(cmd_str);
 }
