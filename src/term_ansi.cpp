@@ -405,7 +405,7 @@ void TERM_ANSI::vt_print(char c) {
 
 	// can't print extended ascii
 	if (c > '\177')
-		c = '?';
+		c = ':';
 
 	if (vt_shift_out)
 		c = dec_special_graphics(c);

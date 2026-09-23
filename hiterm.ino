@@ -15,8 +15,8 @@
 // Use UART2, reserve UART0 for USB updates
 // UART0 default pins are RX=3, TX=1
 // UART2 default pins are RX=16, TX=17
-#define SERIAL_RX 3 
-#define SERIAL_TX 1
+#define SERIAL_RX 16 
+#define SERIAL_TX 17 
 
 const String TITLE = "HITERM 0.3";
 const String CMD_PROMPT = "hiterm> ";
