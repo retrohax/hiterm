@@ -29,9 +29,7 @@ const ToggleCommand* find_toggle_command(const String& input);
 
 void cmd_help_main();
 void cmd_wifi_config();
-void cmd_gateway_config(String gateway_ip);
 void cmd_open_connection(String host, int port, bool use_tls=false);
-void cmd_open_ssh_connection(String host, String user, String password, int port);
 void cmd_close_connection();
 void cmd_display();
 void cmd_show_status();
@@ -60,8 +58,6 @@ void cmd_help_main() {
 	Serial.println("Commands may be abbreviated.  Commands are:");
 	Serial.println();
 	Serial.println("wifi            configure wifi");
-	Serial.println("gateway         set default gateway (temporary)");
-	Serial.println("ssh             connect via SSH (user@host[:port])");
 	Serial.println("open            connect (host [port] [use_tls])");
 	Serial.println("close           close current connection");
 	Serial.println("set             set operating parameters ('set ?' for more)");
@@ -93,49 +89,20 @@ void cmd_help_set(const String& val, String* options, int option_count) {
 */
 
 const Command MAIN_COMMANDS[] = {
-    {"?", [](String* parts, int count) { 
-        cmd_help_main(); 
-    }},
-    {"HELP", [](String* parts, int count) { 
-        cmd_help_main(); 
-    }},
-    {"WIFI", [](String* parts, int count) {
-        cmd_wifi_config();
-    }},
-    {"GATEWAY", [](String* parts, int count) {
-        cmd_gateway_config(count >= 2 ? parts[1] : "");
-    }},
+ 	{"?", [](String* parts, int count) { 
+		cmd_help_main(); 
+	}},
+	{"HELP", [](String* parts, int count) { 
+		cmd_help_main(); 
+	}},
+	{"WIFI", [](String* parts, int count) {
+		cmd_wifi_config();
+	}},
 	{"OPEN", [](String* parts, int count) {
 		String host = count >= 2 ? parts[1] : "";
 		int port = count >= 3 ? parts[2].toInt() : 23;
 		bool use_tls = count >= 4 && parts[3].equalsIgnoreCase("use_tls");
 		cmd_open_connection(host, port, use_tls);
-	}},
-	{"SSH", [](String* parts, int count) {
-		// Parse user@host or user@host:port syntax
-		if (count < 2) {
-			Serial.println("Usage: ssh user@host[:port]");
-			return;
-		}
-		String arg = parts[1];
-		int at_pos = arg.indexOf('@');
-		if (at_pos < 1) {
-			Serial.println("Usage: ssh user@host[:port]");
-			return;
-		}
-		String user = arg.substring(0, at_pos);
-		String host_port = arg.substring(at_pos + 1);
-		String host;
-		int port = 22;
-		int colon_pos = host_port.lastIndexOf(':');
-		if (colon_pos > 0) {
-			host = host_port.substring(0, colon_pos);
-			port = host_port.substring(colon_pos + 1).toInt();
-			if (port <= 0) port = 22;
-		} else {
-			host = host_port;
-		}
-		cmd_open_ssh_connection(host, user, "", port);
 	}},
 	{"CLOSE", [](String* parts, int count) {
 		cmd_close_connection();
@@ -197,54 +164,12 @@ void cmd_wifi_config() {
 	wifi_config();
 }
 
-void cmd_gateway_config(String gateway_ip) {
-	if (gateway_ip.isEmpty()) {
-		Serial.println("Usage: gateway <IP address>");
-		return;
-	}
-
-	// Validate IP address format
-	IPAddress newGateway;
-	if (!newGateway.fromString(gateway_ip)) {
-		Serial.println("Invalid IP address format");
-		return;
-	}
-
-	// Get current network settings
-	IPAddress currentIP = WiFi.localIP();
-	IPAddress subnet = WiFi.subnetMask();
-	IPAddress dns = WiFi.dnsIP(0);
-
-	// Reconfigure with new gateway
-	if (WiFi.config(currentIP, newGateway, subnet, dns)) {
-		Serial.printf("Gateway changed to: %s\n", gateway_ip.c_str());
-	} else {
-		Serial.println("Failed to change gateway");
-	}
-}
-
 void cmd_open_connection(String host, int port, bool use_tls) {
 	if (host.isEmpty()) {
 		Serial.println("?Missing host");
 		return;
 	}
 	g_host->connect(host, port, use_tls);
-}
-
-void cmd_open_ssh_connection(String host, String user, String password, int port) {
-	if (g_terminal_type.equalsIgnoreCase("none")) {
-		Serial.println("SSH connections require a terminal type.");
-		return;
-	}
-	if (host.isEmpty()) {
-		Serial.println("?Missing host");
-		return;
-	}
-	if (user.isEmpty()) {
-		Serial.println("?Missing username");
-		return;
-	}
-	g_host->connect_ssh(host, port, user, password);
 }
 
 void cmd_close_connection() {

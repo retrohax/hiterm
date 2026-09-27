@@ -186,20 +186,20 @@ bool TERM_TELNET::telnet_char(char c) {
 		}
 		case (char)telnet_verbs::DONT: {
 			if (!(g_host->available())) break;
-        	char option = telnet_read();
-        	telnet_verb_DONT(option);
+			char option = telnet_read();
+			telnet_verb_DONT(option);
 			break;
 		}
-        case (char)telnet_verbs::WILL: {
+		case (char)telnet_verbs::WILL: {
 			if (!(g_host->available())) break;
-        	char option = telnet_read();
-        	telnet_verb_WILL(option);
+			char option = telnet_read();
+			telnet_verb_WILL(option);
 			break;
 		}
-        case (char)telnet_verbs::WONT: {
+		case (char)telnet_verbs::WONT: {
 			if (!(g_host->available())) break;
-        	char option = telnet_read();
-        	telnet_verb_WONT(option);
+			char option = telnet_read();
+			telnet_verb_WONT(option);
 			break;
 		}
 	}

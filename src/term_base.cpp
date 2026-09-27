@@ -9,7 +9,10 @@ static void send_str(String str);
 TERM_BASE::TERM_BASE() {}
 
 bool TERM_BASE::available() { return Serial.available(); }
-void TERM_BASE::print(char c) { Serial.print(c); }
+
+void TERM_BASE::print(char c) {
+	Serial.print(c);
+}
 
 char TERM_BASE::read() {
 	char c = Serial.read();
@@ -36,7 +39,7 @@ char TERM_BASE::read() {
 			break;
 		case '\030':
 			// ^X
-            //m_send_ansi_mode = !m_send_ansi_mode;
+			//m_send_ansi_mode = !m_send_ansi_mode;
 			break;
 		case '\034':
 			/* ^\ */

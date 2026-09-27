@@ -19,14 +19,6 @@ void init_terminal(ConnectionType conn_type) {
 		return;
 	}
 
-	// SSH connection
-	if (conn_type == CONN_SSH) {
-		TERM_BASE *new_term = new TERM_BASE();
-		delete g_terminal;
-		g_terminal = new_term;
-		return;
-	}
-	
 	// Raw connection
 	if (g_terminal_type.equalsIgnoreCase("none")) {
 		TERM_BASE *new_term = new TERM_BASE();

@@ -8,7 +8,7 @@ const int EEPROM_SYS2_ADDR = (2 * EEPROM_FIELD_MAXLEN);		// wifi password
 const int EEPROM_USR1_ADDR = (5 * EEPROM_FIELD_MAXLEN);
 const int EEPROM_USR2_ADDR = (6 * EEPROM_FIELD_MAXLEN);
 const int EEPROM_FLAG_ADDR = (7 * EEPROM_FIELD_MAXLEN);
-const int EEPROM_LEN = EEPROM_FLAG_ADDR + 1;				// EEPROM.begin(EEPROM_LEN)
+const int EEPROM_LEN = EEPROM_FLAG_ADDR + 1;			// EEPROM.begin(EEPROM_LEN)
 
 String read_eeprom(int addr_offset);
 void write_eeprom(int addr_offset, const String &str_to_write);

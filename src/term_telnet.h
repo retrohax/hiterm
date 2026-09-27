@@ -16,9 +16,9 @@ class TERM_TELNET : public TERM_BASE {
 		bool telnet_char(char c);
 
 	private:
-        static const int WRITE_BUFFER_SIZE = 256;
-        char m_write_buffer[WRITE_BUFFER_SIZE];
-        int m_write_buffer_pos = 0;
+		static const int WRITE_BUFFER_SIZE = 256;
+		char m_write_buffer[WRITE_BUFFER_SIZE];
+		int m_write_buffer_pos = 0;
 
 		char telnet_read();
 		void telnet_write(char c);

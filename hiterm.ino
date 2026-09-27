@@ -7,7 +7,6 @@
 #include "src/serial.h"
 #include "src/term_telnet.h"
 #include "src/terminal.h"
-#include "src/ssh_client.h"
 
 #define LED_BUILTIN 2
 
@@ -15,8 +14,8 @@
 // Use UART2, reserve UART0 for USB updates
 // UART0 default pins are RX=3, TX=1
 // UART2 default pins are RX=16, TX=17
-#define SERIAL_RX 16 
-#define SERIAL_TX 17 
+#define SERIAL_RX 3 
+#define SERIAL_TX 1 
 
 const String TITLE = "HITERM 0.3";
 const String CMD_PROMPT = "hiterm> ";
@@ -85,12 +84,10 @@ void loop() {
 		Serial.printf("\nConnection closed.\n");
 		init_terminal(CONN_NONE);
 	}
-	g_host->keepalive();
 	if (g_terminal->available()) {
 		g_host->send(g_terminal->read());
 	}
 	if (g_host->available()) {
-		g_terminal->print(g_host->get());
+		g_terminal->print(g_host->read());
 	}
-
 }

@@ -93,24 +93,20 @@ void LSI_ADM3A::rt_update(int fr_y, int fr_x, int to_y, int to_x) {
 	while (true) {
 		if (rt[y-1][x-1] != get_vt_char(y-1, x-1)) {
 			rt[y-1][x-1] = get_vt_char(y-1, x-1);
-			if (y == rt_rows && x == rt_cols) {
-				; // print would cause adm-3a to scroll
-			} else {
-				rt_update_cursor(y, x);
-				Serial.printf("%c", rt[y-1][x-1]);
-				if (rt_x < rt_cols)
-					rt_x++;
-				else {
-					rt_y++;
-					rt_x = 1;
-				}
+			rt_update_cursor(y, x);
+			Serial.printf("%c", rt[y-1][x-1]);
+			if (rt_x < rt_cols)
+				rt_x++;
+			else if (rt_y < rt_rows) {
+				rt_y++;
+				rt_x = 1;
 			}
 		}
 		if (y == to_y && x == to_x)
 			break;
 		if (x < rt_cols)
 			x++;
-		else {
+		else if (y < rt_rows) {
 			y++;
 			x = 1;
 		}
@@ -136,7 +132,6 @@ void LSI_ADM3A::rt_clear(int fr_y, int fr_x, int to_y, int to_x) {
 	}
 }
 
-
 // Scrolls a defined region of the screen.
 // Cursor position is unchanged.
 void LSI_ADM3A::rt_scroll(int fr_y, int to_y, int n) {
@@ -157,23 +152,9 @@ void LSI_ADM3A::rt_scroll(int fr_y, int to_y, int n) {
 }
 
 // Prints one character.
-// Cursor position is updated.
 void LSI_ADM3A::rt_print(char c) {
-
 	rt[rt_y-1][rt_x-1] = c;
-
-	if (rt_x == rt_cols && rt_y == rt_rows) {
-		// print would cause adm-3a to scroll
-		// maybe need to add an option in case dip switch is set to prevent scrolling
-	} else {
-		Serial.print(c);
-		if (rt_x < rt_cols)
-			rt_x++;
-		else {
-			rt_y++;
-			rt_x = 1;
-			rt_update_cursor(rt_y-1, rt_cols);
-		}
-	}
-
+	Serial.print(c);
+	if (rt_x < rt_cols)
+		rt_x++;
 }
