@@ -400,7 +400,6 @@ void command() {
 		}
 	}
 
-	Serial1.println(cmd_str.c_str()); // For debug output if needed
 	Serial.println();
 	process(cmd_str);
 }

@@ -11,9 +11,9 @@
 #define LED_BUILTIN 2
 
 // ESP32 pins for serial communication
-// Use UART2, reserve UART0 for USB updates
-// UART0 default pins are RX=3, TX=1
-// UART2 default pins are RX=16, TX=17
+// Varies by board, for ESP32-W/ROOM-32 use:
+// UART0 pins RX=3, TX=1
+// UART2 pins RX=16, TX=17
 #define SERIAL_RX 3 
 #define SERIAL_TX 1 
 

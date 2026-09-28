@@ -4,7 +4,7 @@ HITERM is a telnet client for your serial terminal.
 
 It runs on ESP32 devices to connect the terminal to wifi.  
 
-If you happen to be using a Lear Siegler ADM-3A "dumb" terminal, HITERM can convert DEC ANSI sequences to the primitive cursor control commands understood by the terminal. This allows your terminal to run a lot of programs it otherwise would not be able to. For example, Dope Wars on sdf.org, z-machine based text adventures, irssi (IRC) and many other ncurses programs. It works pretty well at 19200 baud.  
+If you happen to be using a Lear Siegler ADM-3A terminal, HITERM can convert DEC ANSI sequences to the primitive cursor control commands understood by the terminal. This allows your terminal to run a lot of programs it otherwise would not be able to. For example, NetHack (nethack.alt.org) at 19200 baud works great.  
 
 ![ADM-3A](images/adm3a.jpg)
 
@@ -27,11 +27,12 @@ Passphrase: <YOUR PASSPHRASE>
 hiterm> restart
 ```
 ```
-hiterm> set term vt100
+hiterm> set term adm3a
 hiterm> open telehack.com
 ```
 
 Make sure the terminal you specify in the *set term* command is the correct one for your terminal as described in the TERMINFO database because HITERM will send this name to the host you are connecting to using the telnet protocol. The host will then look up your terminal type in its TERMINFO database and will begin using the control sequences it finds for your terminal. You can verify you have the correct name using the *infocmp* command in Linux, for example: *infocmp adm3a*  
+
 
 #### Optional
 
@@ -54,14 +55,15 @@ Plug the serial cable from your terminal into the DB9 connecter (get a DB25 to D
  
 ![ESP32](images/ESP8266.jpg)
 
+NOTE: Make sure to use a good power supply for the ESP32. Using one of the hub USB ports on the front of a PC will likely not be enough power and will result in erratic behavior and connection drops that make you think something is wrong with HITERM, ask me how I know. 
+
 
  #### Lear Siegler ADM-3A
 
  Try the DEC ANSI emulator to make your ADM-3A work like a VT100:  
  ```
  hiterm> set term adm3a-ansi
- hiterm> open telehack.com
- .aquarium
+ hiterm> open nethack.alt.org
 ```
 * This is a special case where *adm3a-ansi* is not a valid TERMINFO terminal type, the *-ansi* is added to let HITERM know to use the ANSI emulator.
 * Note that this is DEC ANSI not BBS ANSI. BBS ANSI is kind of an extension of DEC ANSI that generally expects the terminal to have 25 rows and makes heavy use of color and other effects.
