@@ -14,8 +14,8 @@
 // Varies by board, for ESP32-W/ROOM-32 use:
 // UART0 pins RX=3, TX=1
 // UART2 pins RX=16, TX=17
-#define SERIAL_RX 16 
-#define SERIAL_TX 17 
+#define SERIAL_RX 3 
+#define SERIAL_TX 1 
 
 const String TITLE = "HITERM 0.3";
 const String CMD_PROMPT = "hiterm> ";
@@ -31,9 +31,8 @@ void setup() {
 		write_eeprom(EEPROM_SYS2_ADDR, "");
 		write_eeprom(EEPROM_BAUD_ADDR, String(1200));
 		write_eeprom(EEPROM_TERM_ADDR, "");
-		write_eeprom(EEPROM_USR1_ADDR, "");
-		write_eeprom(EEPROM_USR2_ADDR, "");
-		write_eeprom(EEPROM_USR3_ADDR, "");
+		for (int i = 0; i < EEPROM_USR_COUNT; i++)
+			write_eeprom(EEPROM_USR_ADDR(i), "");
 		EEPROM.write(EEPROM_FLAG_ADDR, 1);
 		EEPROM.commit();
 	}

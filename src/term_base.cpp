@@ -34,20 +34,10 @@ char TERM_BASE::read() {
 			// ^_
 			while (!Serial.available()) yield();
 			u = Serial.read();
-			switch (u) {
-				case '1':
-					// Send USR1 string from EEPROM
-					send_str(read_eeprom(EEPROM_USR1_ADDR));
-					break;
-				case '2':
-					// Send USR2 string from EEPROM
-					send_str(read_eeprom(EEPROM_USR2_ADDR));
-					break;
-				case '3':
-					// Send USR3 string from EEPROM
-					send_str(read_eeprom(EEPROM_USR3_ADDR));
-					break;
-			}	
+			if (u >= '0' && u < '0' + EEPROM_USR_COUNT) {
+				// Send USRn string from EEPROM
+				send_str(read_eeprom(EEPROM_USR_ADDR(u - '0')));
+			}
 			break;
 		default:
 			return c;

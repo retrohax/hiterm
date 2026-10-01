@@ -45,9 +45,16 @@ void cmd_help_set(const String& val, String* options, int option_count);
 void cmd_set_baud_rate(const String& val, String* options, int option_count);
 void cmd_set_term_type(const String& val, String* options, int option_count);
 void cmd_set_parameters(String key, String val, String* options, int option_count);
+void cmd_set_usr0(const String& val, String* options, int option_count);
 void cmd_set_usr1(const String& val, String* options, int option_count);
 void cmd_set_usr2(const String& val, String* options, int option_count);
 void cmd_set_usr3(const String& val, String* options, int option_count);
+void cmd_set_usr4(const String& val, String* options, int option_count);
+void cmd_set_usr5(const String& val, String* options, int option_count);
+void cmd_set_usr6(const String& val, String* options, int option_count);
+void cmd_set_usr7(const String& val, String* options, int option_count);
+void cmd_set_usr8(const String& val, String* options, int option_count);
+void cmd_set_usr9(const String& val, String* options, int option_count);
 void split_str(String str, char delimiter, String results[], int &count, int max_parts);
 
 
@@ -81,9 +88,7 @@ void cmd_help_toggle() {
 void cmd_help_set(const String& val, String* options, int option_count) {
 	Serial.println("baud            serial baud rate");
 	Serial.println("term            terminal type (optional: rows cols)");
-	Serial.println("usr1            USR1 string");
-	Serial.println("usr2            USR2 string");
-	Serial.println("usr3            USR3 string");
+	Serial.println("usr0            USR0 string (usr0-usr9, sent with Ctrl+_ then 0-9)");
 }
 
 /*
@@ -195,12 +200,11 @@ void cmd_display() {
 	g_host->show_crlf();
 	g_host->show_local_echo();
 	show_serial_baud_rate();
-	String usr1 = read_eeprom(EEPROM_USR1_ADDR);
-	String usr2 = read_eeprom(EEPROM_USR2_ADDR);
-	String usr3 = read_eeprom(EEPROM_USR3_ADDR);
-	Serial.printf("USR1 (Ctrl+_, 1) : %s\r\n", usr1.c_str());
-	Serial.printf("USR2 (Ctrl+_, 2) : %s\r\n", usr2.c_str());
-	Serial.printf("USR3 (Ctrl+_, 3) : %s\r\n", usr3.c_str());
+	for (int i = 0; i < EEPROM_USR_COUNT; i++) {
+		String usr = read_eeprom(EEPROM_USR_ADDR(i));
+		if (usr != "")
+			Serial.printf("USR%d (Ctrl+_, %d) : %s\r\n", i, i, usr.c_str());
+	}
 }
 
 void cmd_show_status() {
@@ -316,17 +320,21 @@ void cmd_set_term_type(const String& val, String* options, int option_count) {
 	write_eeprom(EEPROM_TERM_ADDR, buf);
 }
 
-void cmd_set_usr1(const String& val, String* options, int option_count) {
-	write_eeprom(EEPROM_USR1_ADDR, val);
-}
+#define USR_SET_HANDLER(n) \
+	void cmd_set_usr##n(const String& val, String* options, int option_count) { \
+		write_eeprom(EEPROM_USR_ADDR(n), val); \
+	}
 
-void cmd_set_usr2(const String& val, String* options, int option_count) {
-	write_eeprom(EEPROM_USR2_ADDR, val);
-}
-
-void cmd_set_usr3(const String& val, String* options, int option_count) {
-	write_eeprom(EEPROM_USR3_ADDR, val);
-}
+USR_SET_HANDLER(0)
+USR_SET_HANDLER(1)
+USR_SET_HANDLER(2)
+USR_SET_HANDLER(3)
+USR_SET_HANDLER(4)
+USR_SET_HANDLER(5)
+USR_SET_HANDLER(6)
+USR_SET_HANDLER(7)
+USR_SET_HANDLER(8)
+USR_SET_HANDLER(9)
 
 /*
 	TOGGLE COMMANDS
