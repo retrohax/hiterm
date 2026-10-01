@@ -241,13 +241,20 @@ void cmd_toggle_parameters(String key) {
 */
 
 const SetCommand SET_COMMANDS[] = {
-    {"?", cmd_help_set},
-    {"BAUD", cmd_set_baud_rate},
-    {"TERM", cmd_set_term_type},
+	{"?", cmd_help_set},
+	{"BAUD", cmd_set_baud_rate},
+	{"TERM", cmd_set_term_type},
+	{"USR0", cmd_set_usr0},
 	{"USR1", cmd_set_usr1},
 	{"USR2", cmd_set_usr2},
 	{"USR3", cmd_set_usr3},
-    {nullptr, nullptr}  // Terminator
+	{"USR4", cmd_set_usr4},
+	{"USR5", cmd_set_usr5},
+	{"USR6", cmd_set_usr6},
+	{"USR7", cmd_set_usr7},
+	{"USR8", cmd_set_usr8},
+	{"USR9", cmd_set_usr9},
+	{nullptr, nullptr}  // Terminator
 };
 
 const SetCommand* find_set_command(const String& input) {
