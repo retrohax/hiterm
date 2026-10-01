@@ -96,7 +96,7 @@ void cmd_help_set(const String& val, String* options, int option_count) {
 */
 
 const Command MAIN_COMMANDS[] = {
- 	{"?", [](String* parts, int count) { 
+	{"?", [](String* parts, int count) { 
 		cmd_help_main(); 
 	}},
 	{"HELP", [](String* parts, int count) { 
@@ -229,15 +229,15 @@ void cmd_restart_device() {
 }
 
 void cmd_set_parameters(String key, String val, String* options, int option_count) {
-    const SetCommand* cmd = find_set_command(key);
-    if (!cmd) return;
-    cmd->handler(val, options, option_count);
+	const SetCommand* cmd = find_set_command(key);
+	if (!cmd) return;
+	cmd->handler(val, options, option_count);
 }
 
 void cmd_toggle_parameters(String key) {
-    const ToggleCommand* cmd = find_toggle_command(key);
-    if (!cmd) return;
-    cmd->handler();
+	const ToggleCommand* cmd = find_toggle_command(key);
+	if (!cmd) return;
+	cmd->handler();
 }
 
 /*
@@ -262,30 +262,30 @@ const SetCommand SET_COMMANDS[] = {
 };
 
 const SetCommand* find_set_command(const String& input) {
-    const SetCommand* match = nullptr;
+	const SetCommand* match = nullptr;
     
-    for (int i = 0; SET_COMMANDS[i].name != nullptr; i++) {
-        if (strncasecmp(input.c_str(), SET_COMMANDS[i].name, input.length()) == 0) {
-            if (match != nullptr) {
-                // Found second match - ambiguous!
-                Serial.println("?Ambiguous parameter");
-                return nullptr;
-            }
-            match = &SET_COMMANDS[i];
-        }
-    }
+	for (int i = 0; SET_COMMANDS[i].name != nullptr; i++) {
+		if (strncasecmp(input.c_str(), SET_COMMANDS[i].name, input.length()) == 0) {
+			if (match != nullptr) {
+				// Found second match - ambiguous!
+				Serial.println("?Ambiguous parameter");
+				return nullptr;
+			}
+			match = &SET_COMMANDS[i];
+		}
+	}
 
-    if (match == nullptr) {
-        Serial.println("?Invalid parameter");
-    }
+	if (match == nullptr) {
+		Serial.println("?Invalid parameter");
+	}
 
-    return match;
+	return match;
 }
 
 void cmd_set_baud_rate(const String& val, String* options, int option_count) {
-    uint32_t baud_rate = strtoul(val.c_str(), NULL, 10);
-    set_serial_baud_rate(baud_rate);
-    show_serial_baud_rate();
+	uint32_t baud_rate = strtoul(val.c_str(), NULL, 10);
+	set_serial_baud_rate(baud_rate);
+	show_serial_baud_rate();
 }
 
 void cmd_set_term_type(const String& val, String* options, int option_count) {
@@ -348,24 +348,24 @@ const ToggleCommand TOGGLE_COMMANDS[] = {
 };
 
 const ToggleCommand* find_toggle_command(const String& input) {
-    const ToggleCommand* match = nullptr;
+	const ToggleCommand* match = nullptr;
     
-    for (int i = 0; TOGGLE_COMMANDS[i].name != nullptr; i++) {
-        if (strncasecmp(input.c_str(), TOGGLE_COMMANDS[i].name, input.length()) == 0) {
-            if (match != nullptr) {
-                // Found second match - ambiguous!
-                Serial.println("?Ambiguous parameter");
-                return nullptr;
-            }
-            match = &TOGGLE_COMMANDS[i];
-        }
-    }
+	for (int i = 0; TOGGLE_COMMANDS[i].name != nullptr; i++) {
+		if (strncasecmp(input.c_str(), TOGGLE_COMMANDS[i].name, input.length()) == 0) {
+			if (match != nullptr) {
+				// Found second match - ambiguous!
+				Serial.println("?Ambiguous parameter");
+				return nullptr;
+			}
+			match = &TOGGLE_COMMANDS[i];
+		}
+	}
 
-    if (match == nullptr) {
-        Serial.println("?Invalid parameter");
-    }
+	if (match == nullptr) {
+		Serial.println("?Invalid parameter");
+	}
 
-    return match;
+	return match;
 }
 
 void cmd_toggle_crlf() {

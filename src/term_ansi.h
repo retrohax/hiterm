@@ -22,7 +22,7 @@ class TERM_ANSI : public TERM_TELNET {
 
 		int get_vt_char(int y, int x);
 
-        bool m_send_ansi_mode;
+		bool m_send_ansi_mode;
 
 	private:
 		char **vt;
