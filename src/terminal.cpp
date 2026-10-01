@@ -1,3 +1,4 @@
+#include "eeprom.h"
 #include "terminal.h"
 #include "host.h"
 #include "term_base.h"
@@ -8,6 +9,30 @@ TERM_BASE *g_terminal = new TERM_BASE();
 int g_terminal_rows = 0;
 int g_terminal_cols = 0;
 String g_terminal_type = "none";
+
+void init_term_type() {
+	String term_type = read_eeprom(EEPROM_TERM_ADDR);
+	char buf[term_type.length()+1];
+	term_type.toCharArray(buf, sizeof(buf));
+	char *tt_name = strtok(buf, " ");
+	char *tt_s1 = (tt_name != NULL) ? strtok(NULL, " ") : NULL;
+	char *tt_s2 = (tt_s1 != NULL) ? strtok(NULL, " ") : NULL;
+	g_terminal_type = (tt_name == NULL) ? "none" : tt_name;
+	if (g_terminal_type.equalsIgnoreCase("none")) {
+		g_terminal_rows = 0;
+		g_terminal_cols = 0;
+	} else if (g_terminal_type.equalsIgnoreCase("dumb")) {
+		g_terminal_rows = 0;
+		g_terminal_cols = 80;
+		if (tt_s1 != NULL) g_terminal_rows = atoi(tt_s1);
+		if (tt_s2 != NULL) g_terminal_cols = atoi(tt_s2);
+	} else {
+		g_terminal_rows = 24;
+		g_terminal_cols = 80;
+		if (tt_s1 != NULL) g_terminal_rows = atoi(tt_s1);
+		if (tt_s2 != NULL) g_terminal_cols = atoi(tt_s2);
+	}
+}
 
 void init_terminal(ConnectionType conn_type) {
 

@@ -14,8 +14,8 @@
 // Varies by board, for ESP32-W/ROOM-32 use:
 // UART0 pins RX=3, TX=1
 // UART2 pins RX=16, TX=17
-#define SERIAL_RX 3 
-#define SERIAL_TX 1 
+#define SERIAL_RX 16 
+#define SERIAL_TX 17 
 
 const String TITLE = "HITERM 0.3";
 const String CMD_PROMPT = "hiterm> ";
@@ -27,16 +27,19 @@ void setup() {
 
 	EEPROM.begin(EEPROM_LEN);
 	if (EEPROM.read(EEPROM_FLAG_ADDR) != 1) {
-		write_eeprom(EEPROM_SERI_ADDR, String(1200));
 		write_eeprom(EEPROM_SYS1_ADDR, "");
 		write_eeprom(EEPROM_SYS2_ADDR, "");
+		write_eeprom(EEPROM_BAUD_ADDR, String(1200));
+		write_eeprom(EEPROM_TERM_ADDR, "");
 		write_eeprom(EEPROM_USR1_ADDR, "");
 		write_eeprom(EEPROM_USR2_ADDR, "");
+		write_eeprom(EEPROM_USR3_ADDR, "");
 		EEPROM.write(EEPROM_FLAG_ADDR, 1);
 		EEPROM.commit();
 	}
 
 	init_serial(SERIAL_RX, SERIAL_TX);
+	init_term_type();
 	
 	Serial.printf("\r\n\r\n%s\r\n", TITLE.c_str());
 
@@ -65,7 +68,6 @@ void setup() {
 	}
 
 	init_terminal(CONN_NONE);
-	Serial.printf("\r\nTerminal type is none (raw)\r\n");
 	Serial.printf("\r\nType 'help' for commands\r\n");
 }
 

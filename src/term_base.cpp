@@ -15,20 +15,9 @@ void TERM_BASE::print(char c) {
 }
 
 char TERM_BASE::read() {
-	char c = Serial.read();
+	char c, u;
+	c = Serial.read();
 	switch (c) {
-		case '\001':
-			// ^A (send USR1 string from EEPROM)
-			send_str(read_eeprom(EEPROM_USR1_ADDR));
-			break;
-		case '\002':
-			// ^B (send USR2 string from EEPROM)
-			send_str(read_eeprom(EEPROM_USR2_ADDR));
-			break;
-		case '\005':
-			// ^E (ECHO)
-			g_host->toggle_local_echo();
-			break;
 		case '\021':
 			// ^Q (XON)
 			g_host->set_flow_mode(1);
@@ -37,16 +26,28 @@ char TERM_BASE::read() {
 			// ^S (XOFF)
 			g_host->set_flow_mode(0);
 			break;
-		case '\030':
-			// ^X
-			//m_send_ansi_mode = !m_send_ansi_mode;
-			break;
-		case '\034':
-			/* ^\ */
-			g_host->shutdown();
 		case '\035':
 			// ^]
 			command();
+			break;
+		case '\037':
+			// ^_
+			while (!Serial.available()) yield();
+			u = Serial.read();
+			switch (u) {
+				case '1':
+					// Send USR1 string from EEPROM
+					send_str(read_eeprom(EEPROM_USR1_ADDR));
+					break;
+				case '2':
+					// Send USR2 string from EEPROM
+					send_str(read_eeprom(EEPROM_USR2_ADDR));
+					break;
+				case '3':
+					// Send USR3 string from EEPROM
+					send_str(read_eeprom(EEPROM_USR3_ADDR));
+					break;
+			}	
 			break;
 		default:
 			return c;

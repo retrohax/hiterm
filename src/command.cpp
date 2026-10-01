@@ -47,6 +47,7 @@ void cmd_set_term_type(const String& val, String* options, int option_count);
 void cmd_set_parameters(String key, String val, String* options, int option_count);
 void cmd_set_usr1(const String& val, String* options, int option_count);
 void cmd_set_usr2(const String& val, String* options, int option_count);
+void cmd_set_usr3(const String& val, String* options, int option_count);
 void split_str(String str, char delimiter, String results[], int &count, int max_parts);
 
 
@@ -80,8 +81,9 @@ void cmd_help_toggle() {
 void cmd_help_set(const String& val, String* options, int option_count) {
 	Serial.println("baud            serial baud rate");
 	Serial.println("term            terminal type (optional: rows cols)");
-	Serial.println("usr1            USR1 string (Ctrl+A)");
-	Serial.println("usr2            USR2 string (Ctrl+B)");
+	Serial.println("usr1            USR1 string");
+	Serial.println("usr2            USR2 string");
+	Serial.println("usr3            USR3 string");
 }
 
 /*
@@ -195,8 +197,10 @@ void cmd_display() {
 	show_serial_baud_rate();
 	String usr1 = read_eeprom(EEPROM_USR1_ADDR);
 	String usr2 = read_eeprom(EEPROM_USR2_ADDR);
-	Serial.printf("USR1 (Ctrl+A) : %s\r\n", usr1.c_str());
-	Serial.printf("USR2 (Ctrl+B) : %s\r\n", usr2.c_str());
+	String usr3 = read_eeprom(EEPROM_USR3_ADDR);
+	Serial.printf("USR1 (Ctrl+_, 1) : %s\r\n", usr1.c_str());
+	Serial.printf("USR2 (Ctrl+_, 2) : %s\r\n", usr2.c_str());
+	Serial.printf("USR3 (Ctrl+_, 3) : %s\r\n", usr3.c_str());
 }
 
 void cmd_show_status() {
@@ -242,6 +246,7 @@ const SetCommand SET_COMMANDS[] = {
     {"TERM", cmd_set_term_type},
 	{"USR1", cmd_set_usr1},
 	{"USR2", cmd_set_usr2},
+	{"USR3", cmd_set_usr3},
     {nullptr, nullptr}  // Terminator
 };
 
@@ -273,23 +278,35 @@ void cmd_set_baud_rate(const String& val, String* options, int option_count) {
 }
 
 void cmd_set_term_type(const String& val, String* options, int option_count) {
-    g_terminal_type = val.isEmpty() ? "none" : val;
-    
-    // Set dimensions based on type
-    if (g_terminal_type.equalsIgnoreCase("none")) {
-        g_terminal_rows = 0;
-        g_terminal_cols = 0;
-    } else if (g_terminal_type.equalsIgnoreCase("dumb")) {
-        g_terminal_rows = 0;
-        g_terminal_cols = 80;
-        if (option_count > 0) g_terminal_cols = options[0].toInt();
-    } else {
-        // Default to ANSI/VT100-like terminal
-        g_terminal_rows = 24;
-        g_terminal_cols = 80;
-        if (option_count > 0) g_terminal_rows = options[0].toInt();
-        if (option_count > 1) g_terminal_cols = options[1].toInt();
-    }
+	g_terminal_type = val.isEmpty() ? "none" : val;
+
+	// Set dimensions based on type
+	if (g_terminal_type.equalsIgnoreCase("none")) {
+		g_terminal_rows = 0;
+		g_terminal_cols = 0;
+	} else if (g_terminal_type.equalsIgnoreCase("dumb")) {
+		g_terminal_rows = 0;
+		g_terminal_cols = 80;
+		if (option_count > 0) g_terminal_rows = options[0].toInt();
+		if (option_count > 1) g_terminal_cols = options[1].toInt();
+	} else {
+		// Default to ANSI/VT100-like terminal
+		g_terminal_rows = 24;
+		g_terminal_cols = 80;
+		if (option_count > 0) g_terminal_rows = options[0].toInt();
+		if (option_count > 1) g_terminal_cols = options[1].toInt();
+	}
+
+	char buf[EEPROM_FIELD_MAXLEN+1];
+	snprintf(
+		buf,
+		sizeof(buf),
+		"%s %d %d",
+		g_terminal_type.c_str(),
+		g_terminal_rows,
+		g_terminal_cols
+	);	
+	write_eeprom(EEPROM_TERM_ADDR, buf);
 }
 
 void cmd_set_usr1(const String& val, String* options, int option_count) {
@@ -298,6 +315,10 @@ void cmd_set_usr1(const String& val, String* options, int option_count) {
 
 void cmd_set_usr2(const String& val, String* options, int option_count) {
 	write_eeprom(EEPROM_USR2_ADDR, val);
+}
+
+void cmd_set_usr3(const String& val, String* options, int option_count) {
+	write_eeprom(EEPROM_USR3_ADDR, val);
 }
 
 /*

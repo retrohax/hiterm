@@ -13,6 +13,8 @@ String read_eeprom(int addr_offset) {
 
 void write_eeprom(int addr_offset, const String &str_to_write) {
 	byte length = str_to_write.length();
+	if (length > EEPROM_FIELD_MAXLEN)
+		length = EEPROM_FIELD_MAXLEN;
 	EEPROM.write(addr_offset, length);
 	for (int i = 0; i < length; i++) {
 		EEPROM.write(addr_offset + 1 + i, str_to_write[i]);

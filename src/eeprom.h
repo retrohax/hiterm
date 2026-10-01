@@ -2,11 +2,13 @@
 #include <Arduino.h>
 
 const int EEPROM_FIELD_MAXLEN = 80;
-const int EEPROM_SERI_ADDR = (0 * EEPROM_FIELD_MAXLEN);		// serial speed
-const int EEPROM_SYS1_ADDR = (1 * EEPROM_FIELD_MAXLEN);		// wifi ssid
-const int EEPROM_SYS2_ADDR = (2 * EEPROM_FIELD_MAXLEN);		// wifi password
-const int EEPROM_USR1_ADDR = (5 * EEPROM_FIELD_MAXLEN);
-const int EEPROM_USR2_ADDR = (6 * EEPROM_FIELD_MAXLEN);
+const int EEPROM_SYS1_ADDR = (0 * EEPROM_FIELD_MAXLEN);		// wifi ssid
+const int EEPROM_SYS2_ADDR = (1 * EEPROM_FIELD_MAXLEN);		// wifi password
+const int EEPROM_BAUD_ADDR = (2 * EEPROM_FIELD_MAXLEN);		// serial baud rate
+const int EEPROM_TERM_ADDR = (3 * EEPROM_FIELD_MAXLEN);		// terminal type
+const int EEPROM_USR1_ADDR = (4 * EEPROM_FIELD_MAXLEN);		// user configurable
+const int EEPROM_USR2_ADDR = (5 * EEPROM_FIELD_MAXLEN);
+const int EEPROM_USR3_ADDR = (6 * EEPROM_FIELD_MAXLEN);
 const int EEPROM_FLAG_ADDR = (7 * EEPROM_FIELD_MAXLEN);
 const int EEPROM_LEN = EEPROM_FLAG_ADDR + 1;			// EEPROM.begin(EEPROM_LEN)
 
